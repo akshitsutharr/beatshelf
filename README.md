@@ -273,9 +273,11 @@ Report issues on GitHub.
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details. Allows commercial use, modification, distribution.
+BeatShelf is licensed under the GNU General Public License v3.0.  
+You are free to use, modify, and distribute this software under the same license.
 
----
+© 2025 Akshit Suthar  
+See the [LICENSE](./LICENSE) file for more details.
 
 ## 🙏 Credits
 
