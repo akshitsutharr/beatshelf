@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Play, TrendingUp, Music, Clock, Users, Star, Sparkles } from "lucide-react"
+import { Play, TrendingUp, Music, Clock, Users, Star, Sparkles, Heart } from "lucide-react"
 import { StarRating } from "@/components/ui/star-rating"
 
 interface SpotifyTrack {
@@ -122,24 +122,6 @@ export default function HomePage() {
               Discover, rate, and review the world's music. Join the community.
             </p>
 
-            {/* Creator Credit - Enhanced Design */}
-            <div className="relative inline-block mt-6 sm:mt-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 rounded-2xl blur-lg opacity-30 animate-pulse"></div>
-              <div className="relative bg-black/80 backdrop-blur-sm border border-gray-700 rounded-2xl px-4 sm:px-6 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-red-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-xs text-gray-400 uppercase tracking-wider">Crafted by</p>
-                    <p className="text-base sm:text-lg font-bold bg-gradient-to-r from-red-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-                      Akshit Suthar
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 px-4">
               <Button
                 size="lg"
@@ -158,6 +140,15 @@ export default function HomePage() {
                 <Link href="/search">Search Songs</Link>
               </Button>
             </div>
+
+            {/* Creator Credit - Enhanced Design */}
+            <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600/20 to-pink-600/20 rounded-full border border-red-600/30">
+                <Heart className="w-4 h-4 text-red-400" />
+                <span className="text-sm bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent font-medium">
+                  Crafted by Akshit Suthar
+                </span>
+            </div>
+
           </div>
         </div>
       </section>
