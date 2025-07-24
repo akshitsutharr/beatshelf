@@ -1,7 +1,7 @@
 # 🎵 BeatShelf - Music Discovery Platform
 
 <div align="center">
-  <img src="/icon1.png?height=120&width=120" alt="BeatShelf Logo" width="120" height="120">
+  <img src="https://github.com/akshitsutharr/beatshelf/blob/main/public/icon1.png" alt="BeatShelf Logo" width="120" height="120">
   
   **Discover, Review, and Share Your Musical Journey**
   
