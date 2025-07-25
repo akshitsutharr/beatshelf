@@ -8,11 +8,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StarRating } from "@/components/ui/star-rating"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Heart, Play, Pause, Clock, Calendar, ExternalLink, MessageCircle, ThumbsUp, Loader2 } from "lucide-react"
+import {
+  Heart,
+  Play,
+  Pause,
+  Clock,
+  Calendar,
+  ExternalLink,
+  MessageCircle,
+  ThumbsUp,
+  Loader2,
+  Share,
+  Download,
+} from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
+import { ReviewCardGenerator } from "@/components/review-card-generator"
 
 interface Song {
   id: string
@@ -62,6 +75,8 @@ export default function SongDetailPage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [showCardGenerator, setShowCardGenerator] = useState(false)
+  const [selectedReviewData, setSelectedReviewData] = useState<any>(null)
 
   useEffect(() => {
     if (songId) {
@@ -439,6 +454,48 @@ export default function SongDetailPage() {
     }
   }
 
+  const handleGenerateCard = (reviewData?: any) => {
+    let cardData
+
+    if (reviewData) {
+      // Generate card for another user's review
+      cardData = {
+        songName: song?.name || "Unknown Song",
+        artistName: song?.artist_name || "Unknown Artist",
+        albumName: song?.album_name || "Unknown Album",
+        albumImage: song?.album_image_url || "/placeholder.svg?height=400&width=400",
+        username: reviewData.username,
+        reviewContent: reviewData.content,
+        rating: reviewData.rating || 0,
+        reviewDate: reviewData.created_at,
+      }
+    } else {
+      // Generate card for current user's review
+      if (!song || !user || !userReview.trim() || !userRating) {
+        toast({
+          title: "Missing information",
+          description: "Please add a rating and review before generating a card",
+          variant: "destructive",
+        })
+        return
+      }
+
+      cardData = {
+        songName: song.name,
+        artistName: song.artist_name,
+        albumName: song.album_name,
+        albumImage: song.album_image_url || "/placeholder.svg?height=400&width=400",
+        username: user.user_metadata?.username || user.email?.split("@")[0] || "User",
+        reviewContent: userReview,
+        rating: userRating,
+        reviewDate: new Date().toISOString(),
+      }
+    }
+
+    setSelectedReviewData(cardData)
+    setShowCardGenerator(true)
+  }
+
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000)
     const seconds = Math.floor((ms % 60000) / 1000)
@@ -509,9 +566,9 @@ export default function SongDetailPage() {
 
           <div className="flex-1 space-y-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{song.name}</h1>
-              <p className="text-xl text-gray-300 mb-1">{song.artist_name}</p>
-              <p className="text-lg text-gray-400">{song.album_name}</p>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{song.name}</h1>
+              <p className="text-lg sm:text-xl text-gray-300 mb-1">{song.artist_name}</p>
+              <p className="text-base sm:text-lg text-gray-400">{song.album_name}</p>
             </div>
 
             <div className="flex flex-wrap gap-4 text-sm text-gray-400">
@@ -550,8 +607,8 @@ export default function SongDetailPage() {
 
             <div className="flex flex-wrap gap-4">
               <Button onClick={toggleFavorite} variant={isFavorited ? "default" : "outline"} className="rounded-xl">
-                <Heart className={`h-4 w-4 mr-2 ${isFavorited ? "fill-current" : ""}`} />
-                {isFavorited ? "Favorited" : "Add to Favorites"}
+                <Heart className={`h-4 w-4 mr-2 ${isFavorited ? "fill-current text-red-500" : "text-red-500"}`} />
+                <span className="text-red-500">{isFavorited ? "Favorited" : "Add to Favorites"}</span>
               </Button>
 
               {song.spotify_url && (
@@ -562,6 +619,16 @@ export default function SongDetailPage() {
                   </a>
                 </Button>
               )}
+
+              {user && userReview.trim() && userRating > 0 && (
+                <Button
+                  onClick={() => handleGenerateCard()}
+                  className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  <Share className="h-4 w-4 mr-2" />
+                  Generate Card
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -570,7 +637,7 @@ export default function SongDetailPage() {
         {user && (
           <Card className="bg-gray-900/50 border-gray-800 rounded-3xl backdrop-blur-sm">
             <CardHeader>
-              <CardTitle>Rate this song</CardTitle>
+              <CardTitle className="text-white">Rate this song</CardTitle>
             </CardHeader>
             <CardContent>
               <StarRating rating={userRating} onRatingChange={handleRatingChange} size="lg" maxStars={5} />
@@ -582,7 +649,7 @@ export default function SongDetailPage() {
         {user && (
           <Card className="bg-gray-900/50 border-gray-800 rounded-3xl backdrop-blur-sm">
             <CardHeader>
-              <CardTitle>Write a review</CardTitle>
+              <CardTitle className="text-white">Write a review</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <RichTextEditor
@@ -590,20 +657,28 @@ export default function SongDetailPage() {
                 onChange={(value) => setUserReview(value)}
                 placeholder="Share your thoughts about this song..."
               />
-              <Button
-                onClick={handleReviewSubmit}
-                disabled={!userReview.trim() || submitting}
-                className="bg-red-600 hover:bg-red-700 rounded-xl"
-              >
-                {submitting ? "Publishing..." : "Publish Review"}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleReviewSubmit}
+                  disabled={!userReview.trim() || submitting}
+                  className="bg-red-600 hover:bg-red-700 rounded-xl"
+                >
+                  {submitting ? "Publishing..." : "Publish Review"}
+                </Button>
+                {userReview.trim() && userRating > 0 && (
+                  <Button onClick={() => handleGenerateCard()} variant="outline" className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Card
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
 
         {/* Reviews List */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Reviews ({reviews.length})</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">Reviews ({reviews.length})</h2>
 
           {reviews.length === 0 ? (
             <Card className="bg-gray-900/50 border-gray-800 rounded-3xl backdrop-blur-sm">
@@ -621,7 +696,7 @@ export default function SongDetailPage() {
                 >
                   <CardContent className="pt-6">
                     <div className="flex gap-4">
-                      <Avatar className="h-12 w-12">
+                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                         <AvatarImage src={review.profiles.avatar_url || "/placeholder.svg"} />
                         <AvatarFallback className="bg-gray-700 text-white">
                           {review.profiles.username.charAt(0).toUpperCase()}
@@ -630,14 +705,16 @@ export default function SongDetailPage() {
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-white">{review.profiles.username}</span>
-                            <span className="text-sm text-gray-400">{formatTimeAgo(review.created_at)}</span>
+                            <span className="font-semibold text-white text-sm sm:text-base">
+                              {review.profiles.username}
+                            </span>
+                            <span className="text-xs sm:text-sm text-gray-400">{formatTimeAgo(review.created_at)}</span>
                           </div>
                           {review.ratings && <StarRating rating={review.ratings.rating} readonly size="sm" />}
                         </div>
 
                         <div
-                          className="text-gray-300 leading-relaxed"
+                          className="text-gray-300 leading-relaxed text-sm sm:text-base"
                           dangerouslySetInnerHTML={{
                             __html: review.content
                               .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
@@ -658,6 +735,22 @@ export default function SongDetailPage() {
                             <ThumbsUp className={`w-4 h-4 mr-2 ${review.user_liked ? "fill-current" : ""}`} />
                             {review.likes_count || 0}
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleGenerateCard({
+                                username: review.profiles.username,
+                                content: review.content,
+                                rating: review.ratings?.rating || 0,
+                                created_at: review.created_at,
+                              })
+                            }
+                            className="text-purple-500 hover:text-purple-400 rounded-xl"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Card
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -668,6 +761,18 @@ export default function SongDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Review Card Generator Modal */}
+      {showCardGenerator && selectedReviewData && (
+        <ReviewCardGenerator
+          reviewData={selectedReviewData}
+          isOpen={showCardGenerator}
+          onClose={() => {
+            setShowCardGenerator(false)
+            setSelectedReviewData(null)
+          }}
+        />
+      )}
     </div>
   )
 }

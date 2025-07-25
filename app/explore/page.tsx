@@ -182,7 +182,7 @@ export default function ExplorePage() {
                         key={track.id}
                         className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-3xl backdrop-blur-sm"
                       >
-                        <CardContent className="p-4 md:p-4">
+                        <CardContent className="p-3 md:p-4">
                           <Link href={`/song/${track.id}`}>
                             <div className="relative aspect-square mb-3 md:mb-4 rounded-2xl overflow-hidden">
                               <Image
@@ -243,7 +243,7 @@ export default function ExplorePage() {
                     key={track.id}
                     className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-3xl backdrop-blur-sm"
                   >
-                    <CardContent className="p-5">
+                    <CardContent className="p-4">
                       <Link href={`/song/${track.id}`} className="flex items-center gap-4">
                         <div className="relative w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
                           <Image
