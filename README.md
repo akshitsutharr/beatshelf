@@ -38,7 +38,7 @@
 
 ## 🌟 Overview
 
-**BeatShelf** is a full-stack music discovery platform built with Next.js 14 and Spotify's API. Users can discover music, write reviews, rate songs, and build collections.
+**BeatShelf** is a full-stack music discovery platform built with Next.js 14 and the Spotify Web API. It allows users to discover new music, write in-depth reviews, rate songs, and curate personalized collections. Users can also generate visually stunning review cards that include the song's cover art, their rating, user ID, and review—perfect for sharing on Instagram Stories, Facebook, or any other social media platform.
 
 ### 🎯 Mission
 Create a community-driven music discovery experience for exploring, reviewing, and sharing tracks.
@@ -48,6 +48,7 @@ Create a community-driven music discovery experience for exploring, reviewing, a
 - Real-time reviews and ratings
 - Advanced search and social features
 - Responsive, modern UI
+- Generate stylish review cards to share on any social platform.
 
 ---
 
@@ -63,6 +64,7 @@ Create a community-driven music discovery experience for exploring, reviewing, a
 - Rich text reviews and 5-star ratings
 - Favorites collection and dashboard
 - Customizable settings
+- Generate stylish review cards for sharing on social media
 
 ### 🔍 Advanced Features
 - Real-time sync and dark theme
