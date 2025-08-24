@@ -55,11 +55,11 @@ export function SongCard({ song, showRating = true, className }: SongCardProps) 
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
             {/* Add button overlay */}
-            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 size="icon"
                 variant="secondary"
-                className="rounded-full bg-white/90 hover:bg-white text-black shadow-md"
+                className="rounded-full bg-white/90 hover:bg-white text-black shadow-md w-6 h-6 sm:w-8 sm:h-8"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -67,7 +67,7 @@ export function SongCard({ song, showRating = true, className }: SongCardProps) 
                   alert("Add to playlist functionality not implemented yet.")
                 }}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
 
@@ -75,27 +75,31 @@ export function SongCard({ song, showRating = true, className }: SongCardProps) 
             <Button
               size="icon"
               variant="ghost"
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-black/40"
+              className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-black/40 w-6 h-6 sm:w-8 sm:h-8"
               onClick={handleFavorite}
             >
-              <Heart className={cn("h-4 w-4", isFavorited ? "fill-red-500 text-red-500" : "text-white")} />
+              <Heart className={cn("h-3 w-3 sm:h-4 sm:w-4", isFavorited ? "fill-red-500 text-red-500" : "text-white")} />
             </Button>
           </div>
 
-          <div className="p-4 space-y-2">
+          <div className="p-2 sm:p-4 space-y-1 sm:space-y-2">
             <div>
-              <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
-                {song.name}
+              <h3 className="font-semibold text-xs sm:text-sm line-clamp-1 group-hover:text-primary transition-colors">
+                {song.name.length > 20 ? song.name.substring(0, 20) + "..." : song.name}
               </h3>
-              <p className="text-sm text-muted-foreground line-clamp-1">{song.artist_name}</p>
-              <p className="text-xs text-muted-foreground line-clamp-1">{song.album_name}</p>
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {song.artist_name.length > 15 ? song.artist_name.substring(0, 15) + "..." : song.artist_name}
+              </p>
+              <p className="text-xs text-muted-foreground line-clamp-1 hidden sm:block">
+                {song.album_name.length > 18 ? song.album_name.substring(0, 18) + "..." : song.album_name}
+              </p>
             </div>
 
             {showRating && song.avg_rating !== undefined && (
               <div className="flex items-center justify-between">
                 <StarRating rating={song.avg_rating} readonly size="sm" />
                 {song.total_ratings && song.total_ratings > 0 && (
-                  <span className="text-xs text-muted-foreground">({song.total_ratings})</span>
+                  <span className="text-xs text-muted-foreground hidden sm:inline">({song.total_ratings})</span>
                 )}
               </div>
             )}

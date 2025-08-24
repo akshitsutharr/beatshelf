@@ -230,27 +230,31 @@ export default function HomePage() {
                       <Link
                         key={item.track.id}
                         href={`/song/${item.track.id}`}
-                        className="flex items-center gap-2 sm:gap-3 p-2 rounded-xl sm:rounded-2xl hover:bg-gray-800/50 transition-colors group"
+                        className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-gray-800/50 transition-colors group"
                       >
                         <div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
-                          <span className="text-sm sm:text-lg font-bold text-gray-400 group-hover:text-red-600">
+                          <span className="text-xs sm:text-lg font-bold text-gray-400 group-hover:text-red-600">
                             {index + 1}
                           </span>
                         </div>
                         <Image
                           src={item.track.album.images[0]?.url || "/placeholder.svg?height=40&width=40"}
                           alt={item.track.name}
-                          width={32}
-                          height={32}
-                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl"
+                          width={24}
+                          height={24}
+                          className="w-6 h-6 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-medium text-white truncate">{item.track.name}</p>
+                          <p className="text-xs sm:text-sm font-medium text-white truncate">
+                            {item.track.name.length > 20 ? item.track.name.substring(0, 20) + "..." : item.track.name}
+                          </p>
                           <p className="text-xs text-gray-400 truncate">
-                            {item.track.artists.map((a) => a.name).join(", ")}
+                            {item.track.artists.map((a) => a.name).join(", ").length > 15 ? 
+                             item.track.artists.map((a) => a.name).join(", ").substring(0, 15) + "..." : 
+                             item.track.artists.map((a) => a.name).join(", ")}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                           <StarRating rating={4.2 + Math.random() * 0.8} readonly size="sm" />
                           <span className="text-xs text-gray-500 hidden sm:inline">
                             {formatDuration(item.track.duration_ms)}
@@ -291,14 +295,16 @@ export default function HomePage() {
                         </div>
                         <div className="space-y-1">
                           <h4 className="font-medium text-xs sm:text-sm text-white line-clamp-1">
-                            {item.track.album.name}
+                            {item.track.album.name.length > 15 ? item.track.album.name.substring(0, 15) + "..." : item.track.album.name}
                           </h4>
                           <p className="text-xs text-gray-400 line-clamp-1">
-                            {item.track.artists.map((a) => a.name).join(", ")}
+                            {item.track.artists.map((a) => a.name).join(", ").length > 12 ? 
+                             item.track.artists.map((a) => a.name).join(", ").substring(0, 12) + "..." : 
+                             item.track.artists.map((a) => a.name).join(", ")}
                           </p>
                           <div className="flex items-center justify-between">
                             <StarRating rating={4.0 + Math.random() * 1} readonly size="sm" />
-                            <Badge variant="secondary" className="bg-red-600/20 text-red-400 text-xs rounded-full">
+                            <Badge variant="secondary" className="bg-red-600/20 text-red-400 text-xs rounded-full px-1">
                               Hot
                             </Badge>
                           </div>

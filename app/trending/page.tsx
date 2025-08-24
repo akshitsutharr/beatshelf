@@ -171,35 +171,35 @@ export default function TrendingPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-8">
+  <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
+  <div className="space-y-6 sm:space-y-8">
           {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2">
+          <div className="text-center space-y-3 sm:space-y-4">
+            <div className="flex items-center justify-center gap-1 sm:gap-2">
               <TrendingUp className="h-8 w-8 text-red-600" />
-              <h1 className="text-3xl md:text-4xl font-bold text-white">Trending Now</h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Trending Now</h1>
             </div>
-            <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">
+            <p className="text-gray-400 max-w-xl mx-auto text-xs sm:text-sm md:text-base">
               Discover the hottest tracks and latest releases from around the world
             </p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-900 border-gray-800 rounded-2xl">
-              <TabsTrigger value="charts" className="data-[state=active]:bg-red-600 rounded-xl">
+            <TabsList className="grid w-full grid-cols-3 bg-gray-900 border-gray-800 rounded-2xl text-xs sm:text-base">
+              <TabsTrigger value="charts" className="data-[state=active]:bg-red-600 rounded-xl px-1 py-1 sm:px-2 sm:py-2">
                 Top Charts
               </TabsTrigger>
-              <TabsTrigger value="new-releases" className="data-[state=active]:bg-red-600 rounded-xl">
+              <TabsTrigger value="new-releases" className="data-[state=active]:bg-red-600 rounded-xl px-1 py-1 sm:px-2 sm:py-2">
                 New Releases
               </TabsTrigger>
-              <TabsTrigger value="viral" className="data-[state=active]:bg-red-600 rounded-xl">
+              <TabsTrigger value="viral" className="data-[state=active]:bg-red-600 rounded-xl px-1 py-1 sm:px-2 sm:py-2">
                 Viral Hits
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="charts" className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-xl md:text-2xl font-semibold text-white">Global Top 50</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white">Global Top 50</h2>
                 <Button
                   variant="outline"
                   onClick={() => refreshData("charts")}
@@ -215,20 +215,20 @@ export default function TrendingPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-red-600" />
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {chartTracks.slice(0, 50).map((item, index) => (
                     <Card
                       key={item.track.id}
                       className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 rounded-2xl backdrop-blur-sm"
                     >
-                      <CardContent className="p-4">
-                        <Link href={`/song/${item.track.id}`} className="flex items-center gap-4 group">
-                          <div className="w-12 h-12 flex items-center justify-center bg-gray-800 rounded-xl">
-                            <span className="text-xl font-bold text-gray-400 group-hover:text-red-600 transition-colors">
+                      <CardContent className="p-2 sm:p-4">
+                        <Link href={`/song/${item.track.id}`} className="flex items-center gap-2 sm:gap-4 group">
+                          <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center bg-gray-800 rounded-xl flex-shrink-0">
+                            <span className="text-sm sm:text-xl font-bold text-gray-400 group-hover:text-red-600 transition-colors">
                               {index + 1}
                             </span>
                           </div>
-                          <div className="relative w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
+                          <div className="relative w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden flex-shrink-0">
                             <Image
                               src={item.track.album.images[0]?.url || "/placeholder.svg?height=64&width=64"}
                               alt={item.track.name}
@@ -237,27 +237,27 @@ export default function TrendingPage() {
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
-                                <Play className="w-4 h-4 text-white ml-0.5" />
+                              <div className="w-4 h-4 sm:w-8 sm:h-8 bg-red-600 rounded-full flex items-center justify-center">
+                                <Play className="w-2 h-2 sm:w-4 sm:h-4 text-white ml-0.5" />
                               </div>
                             </div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-white truncate group-hover:text-red-400 transition-colors">
+                            <h3 className="font-semibold text-white truncate group-hover:text-red-400 transition-colors text-xs sm:text-sm">
                               {item.track.name}
                             </h3>
-                            <p className="text-gray-400 truncate">{item.track.artists.map((a) => a.name).join(", ")}</p>
-                            <p className="text-sm text-gray-500 truncate">{item.track.album.name}</p>
+                            <p className="text-gray-400 truncate text-xs">{item.track.artists.map((a) => a.name).join(", ")}</p>
+                            <p className="text-gray-500 truncate text-xs hidden sm:block">{item.track.album.name}</p>
                           </div>
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
                             <StarRating rating={4.0 + Math.random() * 1} readonly size="sm" />
-                            <div className="flex items-center gap-1 text-gray-500">
+                            <div className="hidden sm:flex items-center gap-1 text-gray-500 text-sm">
                               <Clock className="w-4 h-4" />
-                              <span className="text-sm">{formatDuration(item.track.duration_ms)}</span>
+                              <span>{formatDuration(item.track.duration_ms)}</span>
                             </div>
                             {index < 3 && (
-                              <Badge className="bg-red-600 text-white rounded-full px-3">
-                                {index === 0 ? "🔥 Hot" : index === 1 ? "⭐ Rising" : "🚀 Viral"}
+                              <Badge className="bg-red-600 text-white rounded-full px-1 sm:px-3 text-xs hidden sm:inline-flex">
+                                {index === 0 ? "🔥" : index === 1 ? "⭐" : "🚀"}
                               </Badge>
                             )}
                           </div>
@@ -270,7 +270,7 @@ export default function TrendingPage() {
             </TabsContent>
 
             <TabsContent value="new-releases" className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                 <h2 className="text-xl md:text-2xl font-semibold text-white">Latest Releases</h2>
                 <Button
                   variant="outline"
@@ -287,15 +287,15 @@ export default function TrendingPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-red-600" />
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
                   {newReleases.map((track) => (
                     <Card
                       key={track.id}
-                      className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-3xl backdrop-blur-sm"
+                      className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
                     >
-                      <CardContent className="p-3 md:p-4">
+                      <CardContent className="p-2 sm:p-3 md:p-4">
                         <Link href={`/song/${track.id}`}>
-                          <div className="relative aspect-square mb-3 md:mb-4 rounded-2xl overflow-hidden">
+                          <div className="relative aspect-square mb-2 sm:mb-3 md:mb-4 rounded-xl sm:rounded-2xl overflow-hidden">
                             <Image
                               src={track.album.images[0]?.url || "/placeholder.svg?height=200&width=200"}
                               alt={track.name}
@@ -303,22 +303,22 @@ export default function TrendingPage() {
                               className="object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 size="icon"
-                                className="w-8 h-8 md:w-10 md:h-10 bg-red-600 hover:bg-red-700 rounded-full"
+                                className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-red-600 hover:bg-red-700 rounded-full"
                               >
-                                <Play className="w-4 h-4 md:w-5 md:h-5 ml-0.5" />
+                                <Play className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ml-0.5" />
                               </Button>
                             </div>
                           </div>
                           <div className="space-y-1 md:space-y-2">
-                            <h3 className="font-medium text-xs md:text-sm text-white line-clamp-2">{track.name}</h3>
-                            <p className="text-xs text-gray-400 line-clamp-1">
-                              {track.artists.map((a) => a.name).join(", ")}
+                            <h3 className="font-medium text-white line-clamp-2 text-xs sm:text-sm">{track.name.length > 20 ? track.name.substring(0, 20) + "..." : track.name}</h3>
+                            <p className="text-gray-400 line-clamp-1 text-xs">
+                              {track.artists.map((a) => a.name).join(", ").length > 15 ? track.artists.map((a) => a.name).join(", ").substring(0, 15) + "..." : track.artists.map((a) => a.name).join(", ")}
                             </p>
                             <div className="flex items-center justify-between">
-                              <Badge variant="secondary" className="bg-red-600/20 text-red-400 text-xs rounded-full">
+                              <Badge variant="secondary" className="bg-red-600/20 text-red-400 text-xs rounded-full px-1 sm:px-2">
                                 New
                               </Badge>
                             </div>
@@ -349,15 +349,15 @@ export default function TrendingPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-red-600" />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                   {viralHits.map((track, index) => (
                     <Card
                       key={track.id}
-                      className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-3xl backdrop-blur-sm"
+                      className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
                     >
-                      <CardContent className="p-4 md:p-6">
-                        <Link href={`/song/${track.id}`} className="flex items-center gap-4">
-                          <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden flex-shrink-0">
+                      <CardContent className="p-3 sm:p-4 md:p-6">
+                        <Link href={`/song/${track.id}`} className="flex items-center gap-2 sm:gap-4">
+                          <div className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl overflow-hidden flex-shrink-0">
                             <Image
                               src={track.album.images[0]?.url || "/placeholder.svg?height=80&width=80"}
                               alt={track.name}
@@ -366,14 +366,16 @@ export default function TrendingPage() {
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-white truncate text-sm md:text-base">{track.name}</h3>
+                            <h3 className="font-semibold text-white truncate text-xs sm:text-sm md:text-base">
+                              {track.name.length > 25 ? track.name.substring(0, 25) + "..." : track.name}
+                            </h3>
                             <p className="text-gray-400 truncate text-xs md:text-sm">
-                              {track.artists.map((a) => a.name).join(", ")}
+                              {track.artists.map((a) => a.name).join(", ").length > 20 ? track.artists.map((a) => a.name).join(", ").substring(0, 20) + "..." : track.artists.map((a) => a.name).join(", ")}
                             </p>
-                            <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center gap-1 sm:gap-2 mt-1 sm:mt-2 flex-wrap">
                               <StarRating rating={3.8 + Math.random() * 1.2} readonly size="sm" />
-                              <Badge className="bg-red-600/20 text-red-400 rounded-full text-xs">
-                                {index < 10 ? "🔥 Viral" : "📈 Trending"}
+                              <Badge className="bg-red-600/20 text-red-400 rounded-full text-xs px-1 sm:px-2">
+                                {index < 10 ? "🔥" : "📈"}
                               </Badge>
                             </div>
                           </div>

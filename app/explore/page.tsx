@@ -105,47 +105,47 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-8">
+      <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <Compass className="h-8 w-8 text-red-600" />
-              <h1 className="text-3xl md:text-4xl font-bold text-white">Explore Music</h1>
+          <div className="text-center space-y-3 sm:space-y-4">
+            <div className="flex items-center justify-center gap-1 sm:gap-2">
+              <Compass className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Explore Music</h1>
             </div>
-            <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">
+            <p className="text-gray-400 max-w-xl mx-auto text-xs sm:text-sm md:text-base px-4">
               Discover new music by genre, explore curated collections, and find your next favorite song
             </p>
           </div>
 
           <Tabs defaultValue="genres" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-gray-900 border-gray-800 rounded-2xl">
-              <TabsTrigger value="genres" className="data-[state=active]:bg-red-600 rounded-xl">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-900 border-gray-800 rounded-2xl text-xs sm:text-base">
+              <TabsTrigger value="genres" className="data-[state=active]:bg-red-600 rounded-xl px-2 py-2 sm:px-4">
                 By Genre
               </TabsTrigger>
-              <TabsTrigger value="discover" className="data-[state=active]:bg-red-600 rounded-xl">
+              <TabsTrigger value="discover" className="data-[state=active]:bg-red-600 rounded-xl px-2 py-2 sm:px-4">
                 Random Discovery
               </TabsTrigger>
             </TabsList>
 
             {/* Genres Tab */}
-            <TabsContent value="genres" className="space-y-8">
+            <TabsContent value="genres" className="space-y-6 sm:space-y-8">
               {/* Genre Selection */}
-              <div className="space-y-4">
-                <h2 className="text-xl md:text-2xl font-semibold text-white">Choose a Genre</h2>
-                <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3">
+              <div className="space-y-3 sm:space-y-4">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white">Choose a Genre</h2>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
                   {MAIN_GENRES.map((genre) => (
                     <Button
                       key={genre.id}
                       variant={selectedGenre === genre.id ? "default" : "outline"}
                       onClick={() => setSelectedGenre(genre.id)}
-                      className={`rounded-2xl h-auto p-4 flex flex-col items-center gap-2 ${
+                      className={`rounded-xl sm:rounded-2xl h-auto p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2 ${
                         selectedGenre === genre.id
                           ? `${genre.color} hover:opacity-90`
                           : "border-gray-600 text-gray-300 bg-transparent hover:bg-gray-800"
                       }`}
                     >
-                      <Music className="w-5 h-5" />
+                      <Music className="w-3 h-3 sm:w-5 sm:h-5" />
                       <span className="text-xs font-medium">{genre.name}</span>
                     </Button>
                   ))}
@@ -153,9 +153,9 @@ export default function ExplorePage() {
               </div>
 
               {/* Genre Tracks */}
-              <div className="space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <h3 className="text-lg md:text-xl font-semibold text-white capitalize">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                  <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white capitalize">
                     {MAIN_GENRES.find((g) => g.id === selectedGenre)?.name} Music
                   </h3>
                   <div className="flex gap-2">
@@ -163,10 +163,10 @@ export default function ExplorePage() {
                       variant="outline"
                       onClick={() => refreshGenre(selectedGenre)}
                       disabled={genreLoading}
-                      className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800"
+                      className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800 text-xs sm:text-sm"
                     >
-                      {genreLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shuffle className="w-4 h-4" />}
-                      Refresh
+                      {genreLoading ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : <Shuffle className="w-3 h-3 sm:w-4 sm:h-4" />}
+                      <span className="ml-1 sm:ml-2">Refresh</span>
                     </Button>
                   </div>
                 </div>
@@ -176,15 +176,15 @@ export default function ExplorePage() {
                     <Loader2 className="h-8 w-8 animate-spin text-red-600" />
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
                     {(genreData[selectedGenre] || []).slice(0, 30).map((track) => (
                       <Card
                         key={track.id}
-                        className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-3xl backdrop-blur-sm"
+                        className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
                       >
-                        <CardContent className="p-3 md:p-4">
+                        <CardContent className="p-2 sm:p-3 md:p-4">
                           <Link href={`/song/${track.id}`}>
-                            <div className="relative aspect-square mb-3 md:mb-4 rounded-2xl overflow-hidden">
+                            <div className="relative aspect-square mb-2 sm:mb-3 md:mb-4 rounded-xl sm:rounded-2xl overflow-hidden">
                               <Image
                                 src={track.album.images[0]?.url || "/placeholder.svg?height=200&width=200"}
                                 alt={track.name}
@@ -192,16 +192,20 @@ export default function ExplorePage() {
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                              <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="w-8 h-8 md:w-10 md:h-10 bg-red-600 rounded-full flex items-center justify-center">
-                                  <Play className="w-4 h-4 md:w-5 md:h-5 text-white ml-0.5" />
+                              <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                                  <Play className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white ml-0.5" />
                                 </div>
                               </div>
                             </div>
                             <div className="space-y-1 md:space-y-2">
-                              <h4 className="font-medium text-xs md:text-sm text-white line-clamp-2">{track.name}</h4>
+                              <h4 className="font-medium text-xs md:text-sm text-white line-clamp-2">
+                                {track.name.length > 20 ? track.name.substring(0, 20) + "..." : track.name}
+                              </h4>
                               <p className="text-xs text-gray-400 line-clamp-1">
-                                {track.artists.map((a) => a.name).join(", ")}
+                                {track.artists.map((a) => a.name).join(", ").length > 15 ? 
+                                 track.artists.map((a) => a.name).join(", ").substring(0, 15) + "..." : 
+                                 track.artists.map((a) => a.name).join(", ")}
                               </p>
                             </div>
                           </Link>
@@ -224,28 +228,28 @@ export default function ExplorePage() {
             </TabsContent>
 
             {/* Random Discovery Tab */}
-            <TabsContent value="discover" className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-lg md:text-2xl font-semibold text-white">Random Discovery</h2>
+            <TabsContent value="discover" className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                <h2 className="text-base sm:text-lg md:text-2xl font-semibold text-white">Random Discovery</h2>
                 <Button
                   variant="outline"
                   onClick={fetchRandomTracks}
-                  className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800"
+                  className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800 text-xs sm:text-sm"
                 >
-                  <Shuffle className="w-4 h-4 mr-2" />
+                  <Shuffle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Shuffle All
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                 {randomTracks.slice(0, 30).map((track, index) => (
                   <Card
                     key={track.id}
-                    className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-3xl backdrop-blur-sm"
+                    className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
                   >
-                    <CardContent className="p-4">
-                      <Link href={`/song/${track.id}`} className="flex items-center gap-4">
-                        <div className="relative w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
+                    <CardContent className="p-3 sm:p-4">
+                      <Link href={`/song/${track.id}`} className="flex items-center gap-2 sm:gap-4">
+                        <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden flex-shrink-0">
                           <Image
                             src={track.album.images[0]?.url || "/placeholder.svg?height=64&width=64"}
                             alt={track.name}
@@ -254,18 +258,22 @@ export default function ExplorePage() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-white truncate group-hover:text-red-400 transition-colors text-sm md:text-base">
-                            {track.name}
+                          <h3 className="font-semibold text-white truncate group-hover:text-red-400 transition-colors text-xs sm:text-sm md:text-base">
+                            {track.name.length > 25 ? track.name.substring(0, 25) + "..." : track.name}
                           </h3>
                           <p className="text-gray-400 truncate text-xs md:text-sm">
-                            {track.artists.map((a) => a.name).join(", ")}
+                            {track.artists.map((a) => a.name).join(", ").length > 20 ? 
+                             track.artists.map((a) => a.name).join(", ").substring(0, 20) + "..." : 
+                             track.artists.map((a) => a.name).join(", ")}
                           </p>
-                          <p className="text-xs text-gray-500 truncate">{track.album.name}</p>
+                          <p className="text-xs text-gray-500 truncate hidden sm:block">
+                            {track.album.name.length > 18 ? track.album.name.substring(0, 18) + "..." : track.album.name}
+                          </p>
                           <StarRating rating={3.5 + Math.random() * 1.5} readonly size="sm" />
                         </div>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
-                            <Play className="w-5 h-5 text-white ml-0.5" />
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                            <Play className="w-4 h-4 sm:w-5 sm:h-5 text-white ml-0.5" />
                           </div>
                         </div>
                       </Link>

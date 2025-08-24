@@ -162,6 +162,102 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
+
+  /* Mobile-specific text truncation */
+  .mobile-text-truncate {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+
+  /* Mobile card adjustments */
+  .mobile-card {
+    padding: 0.75rem !important;
+    border-radius: 1rem !important;
+  }
+
+  /* Mobile star rating - hide stars, show only number */
+  .mobile-stars-hidden .star-icons {
+    display: none !important;
+  }
+
+  /* Mobile badge adjustments */
+  .mobile-badge {
+    font-size: 0.625rem !important;
+    padding: 0.125rem 0.375rem !important;
+  }
+
+  /* Mobile image sizes */
+  .mobile-image-sm {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+
+  .mobile-image-md {
+    width: 3rem !important;
+    height: 3rem !important;
+  }
+
+  /* Mobile grid adjustments */
+  .mobile-grid-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .mobile-grid-1 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Mobile text sizes */
+  .mobile-text-xs {
+    font-size: 0.625rem !important;
+  }
+
+  .mobile-text-sm {
+    font-size: 0.75rem !important;
+  }
+
+  /* Mobile spacing */
+  .mobile-gap-1 {
+    gap: 0.25rem !important;
+  }
+
+  .mobile-gap-2 {
+    gap: 0.5rem !important;
+  }
+
+  .mobile-p-2 {
+    padding: 0.5rem !important;
+  }
+
+  .mobile-p-3 {
+    padding: 0.75rem !important;
+  }
+
+  /* Mobile flex adjustments */
+  .mobile-flex-col {
+    flex-direction: column !important;
+  }
+
+  .mobile-w-full {
+    width: 100% !important;
+  }
+
+  /* Hide elements on mobile */
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  /* Show only on mobile */
+  .mobile-only {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
 }
 
 /* Smooth transitions for better UX */

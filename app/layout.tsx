@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   verification: {
     google: 'jY4malBVzB7Jldw1_KK9HIf9uUeLn84HMic_0PvABec', 
   },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
   icons: {
     icon: '/icon1.png',
     shortcut: '/icon1.png',

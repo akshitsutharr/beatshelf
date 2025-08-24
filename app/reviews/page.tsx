@@ -202,19 +202,19 @@ export default function ReviewsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8 pr-96">
-        <div className="space-y-8">
+      <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <MessageCircle className="h-8 w-8 text-red-600" />
-              <h1 className="text-3xl md:text-4xl font-bold text-white">Community Reviews</h1>
+          <div className="text-center space-y-3 sm:space-y-4">
+            <div className="flex items-center justify-center gap-1 sm:gap-2">
+              <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Community Reviews</h1>
             </div>
-            <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">
+            <p className="text-gray-400 max-w-xl mx-auto text-xs sm:text-sm md:text-base px-4">
               Discover what the community thinks about the latest tracks and timeless classics
             </p>
-            <div className="flex items-center justify-center gap-4">
-              <Badge variant="secondary" className="bg-red-600/20 text-red-400 rounded-full">
+            <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
+              <Badge variant="secondary" className="bg-red-600/20 text-red-400 rounded-full text-xs sm:text-sm">
                 {reviews.length} Reviews
               </Badge>
               <Button
@@ -222,12 +222,12 @@ export default function ReviewsPage() {
                 disabled={refreshing}
                 variant="outline"
                 size="sm"
-                className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800"
+                className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800 text-xs sm:text-sm"
               >
                 {refreshing ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 )}
                 Refresh
               </Button>
@@ -235,13 +235,13 @@ export default function ReviewsPage() {
           </div>
 
           {/* Reviews Grid */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {reviews.length === 0 ? (
-              <Card className="bg-gray-900/50 border-gray-800 rounded-3xl backdrop-blur-sm">
-                <CardContent className="py-12 text-center text-gray-400">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No reviews found. Be the first to share your thoughts!</p>
-                  <Button className="mt-4 bg-red-600 hover:bg-red-700 rounded-xl" asChild>
+              <Card className="bg-gray-900/50 border-gray-800 rounded-2xl sm:rounded-3xl backdrop-blur-sm">
+                <CardContent className="py-8 sm:py-12 text-center text-gray-400">
+                  <MessageCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                  <p className="text-sm sm:text-base">No reviews found. Be the first to share your thoughts!</p>
+                  <Button className="mt-3 sm:mt-4 bg-red-600 hover:bg-red-700 rounded-xl text-xs sm:text-sm" asChild>
                     <Link href="/search">Find Music to Review</Link>
                   </Button>
                 </CardContent>
@@ -250,44 +250,50 @@ export default function ReviewsPage() {
               reviews.map((review) => (
                 <Card
                   key={review.id}
-                  className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 rounded-3xl backdrop-blur-sm"
+                  className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 rounded-2xl sm:rounded-3xl backdrop-blur-sm"
                 >
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
+                  <CardContent className="p-3 sm:p-6">
+                    <div className="space-y-3 sm:space-y-4">
                       {/* User and Time */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <Avatar className="h-8 w-8 sm:h-12 sm:w-12">
                             <AvatarImage src={review.profiles.avatar_url || "/placeholder.svg"} />
-                            <AvatarFallback className="bg-gray-700 text-white">
+                            <AvatarFallback className="bg-gray-700 text-white text-xs sm:text-base">
                               {review.profiles.username.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-semibold text-white">{review.profiles.username}</div>
-                            <div className="text-sm text-gray-400">{formatTimeAgo(review.created_at)}</div>
+                            <div className="font-semibold text-white text-xs sm:text-base">
+                              {review.profiles.username.length > 15 ? review.profiles.username.substring(0, 15) + "..." : review.profiles.username}
+                            </div>
+                            <div className="text-xs text-gray-400">{formatTimeAgo(review.created_at)}</div>
                           </div>
                         </div>
-                        <Badge className="bg-red-600/20 text-red-400 rounded-full">Review</Badge>
+                        <Badge className="bg-red-600/20 text-red-400 rounded-full text-xs">Review</Badge>
                       </div>
 
                       {/* Song Info */}
                       <Link href={`/song/${review.songs.id}`} className="block">
-                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors">
+                        <div className="flex items-center gap-2 sm:gap-4 p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors">
                           <Image
                             src={
                               review.songs.album_image_url || "/placeholder.svg?height=80&width=80&query=album cover"
                             }
                             alt={review.songs.name}
-                            width={80}
-                            height={80}
-                            className="rounded-xl shadow-md"
+                            width={60}
+                            height={60}
+                            className="w-12 h-12 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl shadow-md"
                           />
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg text-white">{review.songs.name}</h3>
-                            <p className="text-gray-400">{review.songs.artist_name}</p>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-white text-sm sm:text-lg truncate">
+                              {review.songs.name.length > 25 ? review.songs.name.substring(0, 25) + "..." : review.songs.name}
+                            </h3>
+                            <p className="text-gray-400 text-xs sm:text-base truncate">
+                              {review.songs.artist_name.length > 20 ? review.songs.artist_name.substring(0, 20) + "..." : review.songs.artist_name}
+                            </p>
                             {review.ratings && (
-                              <div className="mt-2">
+                              <div className="mt-1 sm:mt-2">
                                 <StarRating rating={review.ratings.rating} readonly size="sm" />
                               </div>
                             )}
@@ -298,9 +304,9 @@ export default function ReviewsPage() {
                       {/* Review Content */}
                       <div className="prose prose-sm max-w-none">
                         <div
-                          className="text-gray-300 leading-relaxed"
+                          className="text-gray-300 leading-relaxed text-xs sm:text-sm"
                           dangerouslySetInnerHTML={{
-                            __html: review.content
+                            __html: (review.content.length > 200 ? review.content.substring(0, 200) + "..." : review.content)
                               .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
                               .replace(/\*(.*?)\*/g, "<em>$1</em>")
                               .replace(/\n/g, "<br>"),
@@ -309,19 +315,19 @@ export default function ReviewsPage() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-4 pt-4 border-t border-gray-700">
+                      <div className="flex items-center gap-2 sm:gap-4 pt-2 sm:pt-4 border-t border-gray-700">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleLikeReview(review.id)}
                           className={`${
                             review.user_liked ? "text-red-500 hover:text-red-400" : "text-gray-500 hover:text-red-500"
-                          } rounded-xl`}
+                          } rounded-xl text-xs sm:text-sm`}
                         >
-                          <ThumbsUp className={`w-4 h-4 mr-2 ${review.user_liked ? "fill-current" : ""}`} />
+                          <ThumbsUp className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${review.user_liked ? "fill-current" : ""}`} />
                           {review.likes_count || 0}
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-500 hover:text-white rounded-xl" asChild>
+                        <Button variant="ghost" size="sm" className="text-gray-500 hover:text-white rounded-xl text-xs sm:text-sm" asChild>
                           <Link href={`/song/${review.songs.id}`}>View Song</Link>
                         </Button>
                       </div>

@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Search, User, LogOut, Settings, Heart, Music, MessageCircle, BarChart3, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -54,11 +55,16 @@ export function Navbar() {
             {/* Logo */}
             <div className="flex items-center gap-6">
               <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-                <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center">
-                  <Music className="h-5 w-5 text-white" />
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden">
+                  <Image 
+                    src="/bslogo.png" 
+                    alt="BeatShelf Logo" 
+                    width={32} 
+                    height={32} 
+                    className="w-8 h-8 object-contain"
+                  />
                 </div>
-                <span className="font-bold text-xl text-white hidden sm:block">BeatShelf</span>
-                <span className="font-bold text-lg text-white sm:hidden">BS</span>
+                <span className="font-bold text-xl text-white">BeatShelf</span>
               </Link>
 
               {/* Desktop Navigation */}
