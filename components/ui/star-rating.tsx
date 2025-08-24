@@ -10,9 +10,10 @@ interface StarRatingProps {
   readonly?: boolean
   size?: "sm" | "md" | "lg"
   className?: string
+  forceShowStars?: boolean // New prop to always show stars even on mobile
 }
 
-export function StarRating({ rating, onRatingChange, readonly = false, size = "md", className }: StarRatingProps) {
+export function StarRating({ rating, onRatingChange, readonly = false, size = "md", className, forceShowStars = false }: StarRatingProps) {
   const [hoverRating, setHoverRating] = useState(0)
 
   const sizeClasses = {
@@ -43,13 +44,18 @@ export function StarRating({ rating, onRatingChange, readonly = false, size = "m
 
   return (
     <div className={cn("flex items-center gap-0.5 sm:gap-1", className)}>
-      {/* Show only rating number on mobile, stars on larger screens */}
-      <div className="sm:hidden">
-        <span className="text-xs font-medium text-gray-300">{displayRating.toFixed(1)}/5</span>
-      </div>
+      {/* Show only rating number on mobile (unless forceShowStars is true or component is interactive) */}
+      {!forceShowStars && !onRatingChange && (
+        <div className="sm:hidden">
+          <span className="text-xs font-medium text-gray-300">{displayRating.toFixed(1)}/5</span>
+        </div>
+      )}
       
-      {/* Show stars on larger screens */}
-      <div className="hidden sm:flex items-center gap-1">
+      {/* Show stars on larger screens, or always if forceShowStars is true or component is interactive */}
+      <div className={cn(
+        "flex items-center gap-1",
+        !forceShowStars && !onRatingChange ? "hidden sm:flex" : "flex"
+      )}>
         {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((value) => {
           const isHalf = value % 1 !== 0
           const isFilled = displayRating >= value
