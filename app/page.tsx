@@ -127,7 +127,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-red-600 hover:bg-red-700 text-white rounded-2xl px-6 sm:px-8 py-3 text-base sm:text-lg"
               >
-                <Link href="/trending" className="flex items-center gap-2">
+                <Link href="/explore" className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
                   Explore Music
                 </Link>
