@@ -155,11 +155,11 @@ export default function ExplorePage() {
     <div className="relative min-h-screen bg-[#050608] text-white pb-16">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_0%,rgba(16,185,129,0.2),transparent_35%),radial-gradient(circle_at_85%_35%,rgba(251,113,133,0.17),transparent_32%)]" />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-7 md:p-9">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-5 sm:p-7 md:p-9">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-white/50">Discovery Engine</p>
-              <h1 className="text-4xl md:text-5xl font-semibold mt-2 tracking-tight">Explore Music by Taste</h1>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold mt-2 tracking-tight">Explore Music by Taste</h1>
               <p className="text-white/65 mt-3 max-w-2xl">Discover tracks through genre, mood, and community review momentum.</p>
             </div>
             <Badge className="rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 px-4 py-2">
@@ -205,7 +205,7 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 md:p-6 space-y-5">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 sm:p-5 md:p-6 space-y-5">
           <div className="flex items-center gap-2 text-white/75"><Filter className="w-4 h-4" /> Filters</div>
 
           <div className="space-y-4">
@@ -285,7 +285,7 @@ export default function ExplorePage() {
 
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-2xl md:text-3xl font-semibold tracking-tight inline-flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight inline-flex items-center gap-2">
               <Compass className="w-6 h-6 text-sky-300" /> Discovery Grid
             </h2>
             <p className="text-white/60 text-sm">{filtered.length} tracks matched</p>
@@ -312,7 +312,7 @@ export default function ExplorePage() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
                         <div className="absolute bottom-0 p-4 w-full">
-                          <p className="text-xl font-semibold line-clamp-1">{track.name}</p>
+                          <p className="text-lg sm:text-xl font-semibold line-clamp-1">{track.name}</p>
                           <p className="text-sm text-white/70 line-clamp-1">{track.artists.map((a) => a.name).join(", ")}</p>
                           <div className="flex items-center justify-between mt-3">
                             {track.syntheticRating > 0 ? (

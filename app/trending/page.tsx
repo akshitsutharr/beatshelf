@@ -164,11 +164,11 @@ export default function TrendingPage() {
     <div className="min-h-screen bg-[#050608] text-white pb-16">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_5%,rgba(56,189,248,0.2),transparent_34%),radial-gradient(circle_at_90%_28%,rgba(244,63,94,0.16),transparent_34%)]" />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-7 md:p-10">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-5 sm:p-7 md:p-10">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-white/50">Curated Leaderboard</p>
-              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mt-2">Trending on Beatshelf</h1>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight mt-2">Trending on Beatshelf</h1>
               <p className="text-white/65 mt-3 max-w-2xl">
                 Rankings are based on ratings quality and review activity, not play count.
               </p>
@@ -178,7 +178,7 @@ export default function TrendingPage() {
             </Badge>
           </div>
           <Tabs value={windowFilter} onValueChange={setWindowFilter} className="mt-6">
-            <TabsList className="rounded-2xl bg-black/45 border border-white/10 p-1">
+            <TabsList className="rounded-2xl bg-black/45 border border-white/10 p-1 flex overflow-x-auto no-scrollbar w-full sm:w-auto">
               <TabsTrigger value="daily" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">Daily</TabsTrigger>
               <TabsTrigger value="weekly" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">Weekly</TabsTrigger>
               <TabsTrigger value="all-time" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">All-Time</TabsTrigger>
@@ -187,9 +187,9 @@ export default function TrendingPage() {
         </section>
 
         <section className="grid xl:grid-cols-[1.2fr_1fr] gap-6">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5 md:p-6">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-4 sm:p-5 md:p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-2xl font-semibold">Top Songs</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold">Top Songs</h2>
               <Button variant="outline" className="rounded-xl border-white/20 bg-transparent hover:bg-white/10" asChild>
                 <Link href="/reviews">Open Reviews</Link>
               </Button>
@@ -213,9 +213,9 @@ export default function TrendingPage() {
                         <p className="font-semibold text-lg text-white/80">{index + 1}</p>
                         <p className="text-[10px] uppercase text-white/40 tracking-wide mt-0.5">{song.trend}</p>
                       </div>
-                      <Image src={song.image} alt={song.name} width={56} height={56} className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover shrink-0" />
+                      <Image src={song.image} alt={song.name} width={56} height={56} className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-xl object-cover shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-[15px] md:text-base leading-tight truncate">{song.name}</p>
+                        <p className="font-medium text-sm sm:text-[15px] md:text-base leading-tight truncate">{song.name}</p>
                         <p className="text-[13px] md:text-sm text-white/60 truncate mt-1">{song.artist}</p>
                         <p className="text-[11px] md:text-xs text-white/45 mt-1 hidden sm:block">{song.reviews > 0 ? `${song.reviews} active reviews` : "No reviews yet"}</p>
                       </div>
@@ -237,8 +237,8 @@ export default function TrendingPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5">
-              <h3 className="text-xl font-semibold mb-4">Trending Artists</h3>
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-4 sm:p-5">
+              <h3 className="text-lg sm:text-xl font-semibold mb-4">Trending Artists</h3>
               <div className="space-y-2">
                 {rankedArtists.slice(0, 8).map((artist) => (
                   <div key={artist.name} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-white/[0.05] transition-colors">
@@ -254,8 +254,8 @@ export default function TrendingPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5">
-              <h3 className="text-xl font-semibold mb-4">Top Albums</h3>
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-4 sm:p-5">
+              <h3 className="text-lg sm:text-xl font-semibold mb-4">Top Albums</h3>
               <div className="space-y-2">
                 {rankedAlbums.slice(0, 8).map((album) => (
                   <Link key={album.id} href={`/album/${album.id}`} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-white/[0.05] transition-colors">
@@ -280,10 +280,10 @@ export default function TrendingPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#131a2a]/80 to-[#1c1320]/80 p-6 md:p-8">
+        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#131a2a]/80 to-[#1c1320]/80 p-5 sm:p-6 md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-2xl font-semibold">How leaderboard scoring works</h3>
+              <h3 className="text-xl sm:text-2xl font-semibold">How leaderboard scoring works</h3>
               <p className="text-white/65 mt-2">Weighted by average rating quality, review depth, and fresh community engagement.</p>
             </div>
             <Button variant="outline" className="rounded-xl border-white/25 bg-transparent hover:bg-white/10" asChild>

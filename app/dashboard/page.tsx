@@ -181,7 +181,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#050608] text-white pb-16">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_0%,rgba(34,197,94,0.16),transparent_35%),radial-gradient(circle_at_88%_25%,rgba(56,189,248,0.16),transparent_34%)]" />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-7 md:p-9">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-5 sm:p-7 md:p-9">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border border-white/20">
@@ -192,7 +192,7 @@ export default function DashboardPage() {
               </Avatar>
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-white/50">Personal Hub</p>
-                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Welcome back, {profile?.username || "Listener"}</h1>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight">Welcome back, {profile?.username || "Listener"}</h1>
                 <p className="text-white/65 mt-1">Track your reviews, ratings, and discovery habits in one place.</p>
               </div>
             </div>
@@ -202,7 +202,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="grid sm:grid-cols-2 xl:grid-cols-6 gap-4">
+        <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
           {[
             { label: "Reviews", value: stats.totalReviews, icon: MessageCircle },
             { label: "Ratings", value: stats.totalRatings, icon: Star },
@@ -222,9 +222,9 @@ export default function DashboardPage() {
         </section>
 
         <section className="grid xl:grid-cols-[1.3fr_1fr] gap-6">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6 space-y-4">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-4 sm:p-5 md:p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">Recent Activity</h2>
+              <h2 className="text-xl sm:text-2xl font-semibold">Recent Activity</h2>
               <Button variant="outline" className="rounded-xl border-white/20 bg-transparent hover:bg-white/10" asChild>
                 <Link href="/reviews">Open Feed</Link>
               </Button>
@@ -256,8 +256,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5">
-              <h3 className="text-xl font-semibold">Favorite Genres</h3>
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-4 sm:p-5">
+              <h3 className="text-lg sm:text-xl font-semibold">Favorite Genres</h3>
               <div className="mt-3 flex flex-wrap gap-2">
                 {favoriteGenres.map((genre) => (
                   <span key={genre} className="text-sm rounded-full px-3 py-1 bg-white/10 border border-white/15 text-white/80">
@@ -267,8 +267,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5 space-y-3">
-              <h3 className="text-xl font-semibold">Saved Collections</h3>
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-4 sm:p-5 space-y-3">
+              <h3 className="text-lg sm:text-xl font-semibold">Saved Collections</h3>
               <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
                 <p className="font-medium">Top 2026 Discoveries</p>
                 <p className="text-sm text-white/60">12 tracks, avg rating 4.4</p>
@@ -279,8 +279,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#151f1f]/80 to-[#1d1627]/80 p-5">
-              <h3 className="text-xl font-semibold">Quick Actions</h3>
+            <div className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#151f1f]/80 to-[#1d1627]/80 p-4 sm:p-5">
+              <h3 className="text-lg sm:text-xl font-semibold">Quick Actions</h3>
               <div className="mt-3 space-y-2">
                 <Button className="w-full justify-start rounded-xl bg-white text-black hover:bg-white/90" asChild>
                   <Link href="/write-review">Write a New Review</Link>
@@ -296,9 +296,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 sm:p-5 md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="text-2xl font-semibold">Latest Ratings</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold">Latest Ratings</h2>
             <p className="text-sm text-white/60">Average: {stats.averageRating.toFixed(1)} / 5</p>
           </div>
           {userRatings.length === 0 ? (
