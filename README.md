@@ -6,7 +6,7 @@
   </p>
 
   <p>
-    <a href="https://beatshelf.vercel.app"><b>Live Demo</b></a>
+    <a href="https://beatshelf.netlify.app/"><b>Live Demo</b></a>
     ·
     <a href="#-features"><b>Features</b></a>
     ·
@@ -48,7 +48,7 @@ You can:
 - Share stylish review cards for socials
 - Enjoy a fast, modern UI (Tailwind + Radix + shadcn/ui style stack)
 
-> Live: https://beatshelf.vercel.app
+> Live: https://beatshelf.netlify.app/
 
 ---
 
@@ -285,7 +285,7 @@ MIT — see [`LICENSE`](./LICENSE)
 
 Built by **Akshit Suthar**  
 - GitHub: https://github.com/akshitsutharr  
-- Live App: https://beatshelf.vercel.app
+- Live App: https://beatshelf.netlify.app/
 
 Shout-out to:
 - Spotify Web API
