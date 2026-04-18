@@ -644,13 +644,39 @@ export function ReviewCardGenerator({ reviewData, isOpen, onClose }: ReviewCardG
 
   if (!isOpen) return null
 
+  const renderDownloadButton = () => (
+    <>
+      <button
+        onClick={download}
+        disabled={isGenerating}
+        style={{
+          padding: "14px 20px", borderRadius: 12,
+          background: isGenerating ? "rgba(239,68,68,0.4)" : "linear-gradient(135deg,#ef4444,#dc2626)",
+          border: "none", color: "#fff", cursor: isGenerating ? "not-allowed" : "pointer",
+          fontSize: 14, fontWeight: 700, letterSpacing: "0.02em",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          boxShadow: isGenerating ? "none" : "0 8px 24px rgba(239,68,68,0.35)",
+          transition: "all 0.2s", fontFamily: "inherit",
+          marginTop: isMobile ? 8 : 0,
+        }}
+      >
+        {isGenerating ? (
+          <><span style={{ display: "inline-block", animation: "spin 1s linear infinite", fontSize: 16 }}>⟳</span> Generating…</>
+        ) : (
+          <>↓ Download Card</>
+        )}
+      </button>
+      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 11 }}>
+        PNG · 2× resolution · {size.w * 2}×{size.h * 2}px
+      </div>
+    </>
+  )
+
   const renderPreviewNode = () => (
     <div style={{
-      flex: isMobile ? "none" : 1, padding: isMobile ? "24px 16px" : 32, overflowY: "auto",
+      flex: isMobile ? "none" : 1, padding: isMobile ? "24px 16px" : 32,
       display: "flex", flexDirection: "column", alignItems: "center",
-      background: "repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,0.012) 10px,rgba(255,255,255,0.012) 20px)",
-      borderBottom: isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
-      minHeight: isMobile ? "40vh" : undefined,
+      borderTop: isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
     }}>
       <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 20 }}>
         Preview — {size.label}
@@ -729,19 +755,22 @@ export function ReviewCardGenerator({ reviewData, isOpen, onClose }: ReviewCardG
         </div>
 
         {/* Body */}
-        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "hidden", flex: 1, minHeight: 0 }}>
-
-          {isMobile && renderPreviewNode()}
+        <div style={{ 
+          display: "flex", 
+          flexDirection: isMobile ? "column" : "row", 
+          overflow: isMobile ? "auto" : "hidden", 
+          flex: 1, minHeight: 0 
+        }}>
 
           {/* Controls Sidebar */}
           <div style={{
             width: isMobile ? "100%" : 280, flexShrink: 0,
             borderRight: isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
             padding: isMobile ? "24px 16px" : "24px 20px",
-            overflowY: "auto",
+            overflowY: isMobile ? "visible" : "auto",
             display: "flex", flexDirection: "column", gap: isMobile ? 24 : 28,
             background: "#050505",
-            flex: isMobile ? 1 : undefined,
+            flex: isMobile ? "none" : 1,
           }}>
 
             {/* Theme */}
@@ -852,32 +881,24 @@ export function ReviewCardGenerator({ reviewData, isOpen, onClose }: ReviewCardG
               </div>
             </section>
 
-            {/* Download */}
-            <button
-              onClick={download}
-              disabled={isGenerating}
-              style={{
-                padding: "14px 20px", borderRadius: 12,
-                background: isGenerating ? "rgba(239,68,68,0.4)" : "linear-gradient(135deg,#ef4444,#dc2626)",
-                border: "none", color: "#fff", cursor: isGenerating ? "not-allowed" : "pointer",
-                fontSize: 14, fontWeight: 700, letterSpacing: "0.02em",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                boxShadow: isGenerating ? "none" : "0 8px 24px rgba(239,68,68,0.35)",
-                transition: "all 0.2s", fontFamily: "inherit",
-              }}
-            >
-              {isGenerating ? (
-                <><span style={{ display: "inline-block", animation: "spin 1s linear infinite", fontSize: 16 }}>⟳</span> Generating…</>
-              ) : (
-                <>↓ Download Card</>
-              )}
-            </button>
-            <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 11 }}>
-              PNG · 2× resolution · {size.w * 2}×{size.h * 2}px
-            </div>
+            {!isMobile && renderDownloadButton()}
           </div>
 
-          {!isMobile && renderPreviewNode()}
+          {/* Preview & Mobile Download Area */}
+          <div style={{ 
+            display: "flex", flexDirection: "column",
+            flex: isMobile ? "none" : 1, 
+            overflowY: isMobile ? "visible" : "auto",
+            background: "repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,0.012) 10px,rgba(255,255,255,0.012) 20px)" 
+          }}>
+            {renderPreviewNode()}
+            {isMobile && (
+              <div style={{ padding: "0 16px 32px 16px", display: "flex", flexDirection: "column", gap: 16 }}>
+                {renderDownloadButton()}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
 
