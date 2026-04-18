@@ -24,7 +24,7 @@ export default async function ArtistPage({
   return (
     <div className="relative min-h-screen bg-[#050608] text-white pb-16 overflow-hidden">
       <div className="absolute inset-0 -z-10 pointer-events-none">
-        <Image src={artistImage} alt={data.artist.name} fill className="object-cover opacity-25 blur-[120px] scale-125" />
+        <Image src={artistImage} alt={data.artist.name} fill sizes="100vw" className="object-cover opacity-25 blur-[120px] scale-125" />
         <div className="absolute inset-0 bg-black/75" />
       </div>
 
@@ -38,7 +38,7 @@ export default async function ArtistPage({
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.06] backdrop-blur-xl p-7 md:p-9">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             <div className="relative w-36 h-36 md:w-48 md:h-48 rounded-3xl overflow-hidden border border-white/10 shrink-0">
-              <Image src={artistImage} alt={data.artist.name} fill className="object-cover" />
+              <Image src={artistImage} alt={data.artist.name} fill sizes="(max-width: 640px) 280px, (max-width: 1024px) 400px, 500px" className="object-cover" />
             </div>
 
             <div className="space-y-4">

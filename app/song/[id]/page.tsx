@@ -239,7 +239,7 @@ export default function SongDetailPage() {
             return {
               ...review,
               profiles: Array.isArray(review.profiles) ? review.profiles[0] : review.profiles,
-              ratings: ratingData,
+              rating: ratingData?.rating || 0,
               likes_count: likesCount || 0,
               user_liked: userLiked,
             } as Review
@@ -907,7 +907,7 @@ export default function SongDetailPage() {
               {relatedTracks.map((track) => (
                 <Link key={track.id} href={`/song/${track.id}`} className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] transition-colors">
                   <div className="relative aspect-[4/5] overflow-hidden">
-                    <Image src={track.image} alt={track.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <Image src={track.image} alt={track.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-black/55" />
                     <div className="absolute inset-x-0 bottom-0 p-3">
                       <p className="text-sm font-semibold line-clamp-1">{track.name}</p>

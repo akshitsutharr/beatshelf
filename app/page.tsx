@@ -748,7 +748,7 @@ export default function HomePage() {
 
                   <div className="mt-4 flex items-center gap-3">
                     <div className="relative h-14 w-14 rounded-2xl overflow-hidden border border-white/15">
-                      <Image src={meta.cover} alt={meta.title} fill className="object-cover" />
+                      <Image src={meta.cover} alt={meta.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm text-white/60 line-clamp-1">on {meta.title}</p>
@@ -812,7 +812,7 @@ export default function HomePage() {
                   className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.02] p-3 hover:bg-white/[0.06] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
                 >
                   <div className="relative h-14 w-14 overflow-hidden rounded-xl">
-                    <Image src={artist.image} alt={artist.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <Image src={artist.image} alt={artist.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-110" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-white line-clamp-1">{artist.name}</p>
@@ -837,7 +837,7 @@ export default function HomePage() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative h-14 w-14 rounded-xl overflow-hidden">
-                      <Image src={track.image} alt={track.name} fill className="object-cover" />
+                      <Image src={track.image} alt={track.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium line-clamp-1">{track.name}</p>

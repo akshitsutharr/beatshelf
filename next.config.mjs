@@ -3,9 +3,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
+
   images: {
     unoptimized: false,
     formats: ["image/avif", "image/webp"],
@@ -21,6 +23,16 @@ const nextConfig = {
       { protocol: "https", hostname: "**.supabase.co" },
     ],
   },
-}
 
-export default nextConfig
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        destination: "https://beatshelf.netlify.app/:path*",
+        permanent: true,
+      },
+    ];
+  },
+};
+
+export default nextConfig;

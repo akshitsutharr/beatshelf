@@ -231,7 +231,11 @@ export function Navbar() {
                 </>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" className="text-white/70 hover:text-white rounded-xl text-sm" asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="text-white/70 hover:text-black hover:bg-white rounded-xl text-sm transition-colors" 
+                    asChild
+                  >
                     <Link href="/sign-in">Sign In</Link>
                   </Button>
 

@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://beatshelf.vercel.app
+Host: https://beatshelf.netlify.app
 
 # Sitemaps
-Sitemap: https://beatshelf.vercel.app/sitemap.xml
+Sitemap: https://beatshelf.netlify.app/sitemap.xml

@@ -79,18 +79,32 @@ export default function AlbumPage() {
           id,
           content,
           created_at,
+          user_id,
           profiles:user_id (username)
         `)
         .eq("song_id", `album:${albumId}`)
         .order("created_at", { ascending: false })
         .limit(10)
 
-      const normalized = (data || []).map((item: any) => ({
-        ...item,
-        profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
-      }))
+      const reviewsWithRatings = await Promise.all(
+        (data || []).map(async (item: any) => {
+          // Fetch the rating from the ratings table
+          const { data: ratingData } = await supabase
+            .from("ratings")
+            .select("rating")
+            .eq("song_id", `album:${albumId}`)
+            .eq("user_id", item.user_id)
+            .maybeSingle()
 
-      setAlbumReviews(normalized)
+          return {
+            ...item,
+            profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles,
+            rating: ratingData?.rating || 0,
+          }
+        })
+      )
+
+      setAlbumReviews(reviewsWithRatings)
     } catch (error) {
       console.error("Error fetching album reviews:", error)
     }
@@ -158,8 +172,7 @@ export default function AlbumPage() {
         albumImage: album?.images[0]?.url || "/placeholder.svg?height=400&width=400",
         username: reviewData.profiles?.username || "Anonymous",
         reviewContent: reviewData.content,
-        // Since we didn't fetch ratings for individual album reviews yet, we'll default to 0
-        rating: 0,
+        rating: reviewData.rating || 0,
         reviewDate: reviewData.created_at,
         mediaType: "album",
       }

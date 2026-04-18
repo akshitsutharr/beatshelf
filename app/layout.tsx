@@ -1,20 +1,20 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Space_Grotesk } from "next/font/google"
+import { Inter } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Navbar } from "@/components/navbar"
 import { Toaster } from "@/components/ui/toaster"
 
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: 'BeatShelf - Discover, Review, and Share Music',
   description:
     'A social platform for music discovery, reviews, and ratings. Find your next favorite song and share your musical taste with the community.',
   authors: [{ name: 'Akshit Suthar' }],
-  metadataBase: new URL('https://beatshelf.vercel.app'),
+  metadataBase: new URL('https://beatshelf.netlify.app'),
   verification: {
     google: 'jY4malBVzB7Jldw1_KK9HIf9uUeLn84HMic_0PvABec', 
   },
@@ -27,11 +27,11 @@ export const metadata: Metadata = {
     title: 'BeatShelf',
     description:
       'Rate, review, and share your favorite music with the world.',
-    url: 'https://beatshelf.vercel.app',
+    url: 'https://beatshelf.netlify.app',
     siteName: 'BeatShelf',
     images: [
       {
-        url: 'https://beatshelf.vercel.app/preview.png',
+        url: 'https://beatshelf.netlify.app/preview.png',
         width: 1200,
         height: 630,
         alt: 'BeatShelf Preview',
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'BeatShelf',
     description: 'Music reviews and community sharing platform.',
-    images: ['https://beatshelf.vercel.app/preview.png'],
+    images: ['https://beatshelf.netlify.app/preview.png'],
   },
   robots: {
     index: true,
@@ -66,7 +66,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${spaceGrotesk.className} bg-[#050608] text-white antialiased`}>
+      <body className={`${inter.className} bg-[#050608] text-white antialiased`}>
         <div className="fixed inset-0 -z-20 bg-black" />
         <ClerkProvider>
           <AuthProvider>

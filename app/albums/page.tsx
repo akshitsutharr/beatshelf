@@ -141,7 +141,7 @@ export default function AlbumsPage() {
                 <article key={album.id} className="rounded-3xl overflow-hidden border border-white/10 bg-white/[0.05] group hover:bg-white/[0.08] transition-colors">
                   <Link href={`/album/${album.id}`}>
                     <div className="relative aspect-[4/5] overflow-hidden">
-                      <Image src={album.images[0]?.url || "/placeholder.svg?height=600&width=480"} alt={album.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <Image src={album.images[0]?.url || "/placeholder.svg?height=600&width=480"} alt={album.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-black/55" />
                       <div className="absolute bottom-0 p-4 w-full">
                         <h3 className="text-xl font-semibold line-clamp-1">{album.name}</h3>
