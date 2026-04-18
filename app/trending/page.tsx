@@ -161,32 +161,78 @@ export default function TrendingPage() {
   }, [albums, realReviews, realRatings])
 
   return (
-    <div className="min-h-screen bg-[#050608] text-white pb-16">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_5%,rgba(56,189,248,0.2),transparent_34%),radial-gradient(circle_at_90%_28%,rgba(244,63,94,0.16),transparent_34%)]" />
-      <div className="container mx-auto px-0 sm:px-6 lg:px-8 pt-2 sm:pt-8 space-y-4 sm:space-y-8">
-        <section className="sm:rounded-[2rem] border-b sm:border border-white/5 sm:border-white/10 bg-white/[0.02] sm:bg-white/[0.05] backdrop-blur-xl px-4 py-6 sm:p-7 md:p-10">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-white/50">Curated Leaderboard</p>
-              <h1 className="text-[26px] leading-[1.2] sm:text-4xl md:text-5xl font-semibold tracking-tight mt-2">
-                Trending on<br className="hidden max-[390px]:block" /> Beatshelf
-              </h1>
-              <p className="text-white/65 mt-3 max-w-2xl">
-                Rankings are based on ratings quality and review activity, not play count.
-              </p>
-            </div>
-            <Badge className="bg-red-500/15 text-red-300 border border-red-500/30 px-4 py-2 rounded-full">
-              <Flame className="w-4 h-4 mr-2" /> Fresh Momentum
-            </Badge>
-          </div>
-          <Tabs value={windowFilter} onValueChange={setWindowFilter} className="mt-6">
-            <TabsList className="rounded-2xl bg-black/45 border border-white/10 p-1 flex overflow-x-auto no-scrollbar w-full sm:w-auto">
-              <TabsTrigger value="daily" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">Daily</TabsTrigger>
-              <TabsTrigger value="weekly" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">Weekly</TabsTrigger>
-              <TabsTrigger value="all-time" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">All-Time</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </section>
+    <div className="page-shell min-h-screen bg-[#050608] text-white pb-20">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-black" />
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8 space-y-5 sm:space-y-8">
+<section className="relative sm:rounded-[2rem] border-b sm:border border-white/5 sm:border-white/10 
+bg-white/[0.05] 
+backdrop-blur-2xl px-4 py-6 sm:p-7 md:p-10 overflow-hidden">
+
+  {/* subtle glow */}
+  <div className="absolute inset-0 pointer-events-none bg-black/0" />
+
+  <div className="relative flex flex-wrap items-start justify-between gap-6">
+    
+    {/* LEFT */}
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.28em] text-white/40">
+        Curated Leaderboard
+      </p>
+
+      <h1 className="text-[28px] sm:text-4xl md:text-5xl font-semibold tracking-tight mt-3 leading-[1.1]">
+        <span className="text-white">Trending on</span>
+        <br className="hidden max-[390px]:block" />
+        <span className="text-white"> Beatshelf</span>
+      </h1>
+
+      <p className="text-white/60 mt-4 max-w-2xl text-sm sm:text-base">
+        Rankings are based on ratings quality and review activity, not play count.
+      </p>
+    </div>
+
+    {/* BADGE */}
+    <Badge className="flex items-center gap-2 bg-red-500/10 text-red-300 border border-red-500/25 
+    px-4 py-2 rounded-full shadow-[0_0_20px_rgba(255,60,60,0.15)] 
+    backdrop-blur-md hover:bg-red-500/20 transition">
+      <Flame className="w-4 h-4" />
+      Fresh Momentum
+    </Badge>
+  </div>
+
+  {/* TABS */}
+<Tabs value={windowFilter} onValueChange={setWindowFilter} className="mt-8 flex justify-center">
+  <TabsList className="inline-flex items-center gap-1 rounded-2xl bg-white/[0.06] border border-white/10 p-1 backdrop-blur-xl shadow-inner">
+
+    <TabsTrigger
+      value="daily"
+      className="px-4 py-2 rounded-xl text-sm text-white/50 
+      transition-all duration-200
+      hover:text-white
+      data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md">
+      Daily
+    </TabsTrigger>
+
+    <TabsTrigger
+      value="weekly"
+      className="px-4 py-2 rounded-xl text-sm text-white/50 
+      transition-all duration-200
+      hover:text-white
+      data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md">
+      Weekly
+    </TabsTrigger>
+
+    <TabsTrigger
+      value="all-time"
+      className="px-4 py-2 rounded-xl text-sm text-white/50 
+      transition-all duration-200
+      hover:text-white
+      data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md">
+      All-Time
+    </TabsTrigger>
+
+  </TabsList>
+</Tabs>
+</section>
 
         <section className="grid xl:grid-cols-[1.2fr_1fr] gap-6">
           <div className="min-w-0 sm:rounded-[2rem] sm:border border-white/10 sm:bg-white/[0.05] px-2 sm:px-5 md:px-6 py-4 sm:py-6">
@@ -239,7 +285,7 @@ export default function TrendingPage() {
           </div>
 
           <div className="space-y-6 min-w-0">
-            <div className="sm:rounded-[2rem] sm:border border-white/10 sm:bg-white/[0.05] px-4 sm:px-5 py-4 sm:py-5 border-t border-white/10 sm:border-t-0 mt-4 sm:mt-0">
+            <div className="sm:rounded-[2rem] sm:border border-white/10 sm:bg-white/[0.05] px-4 sm:px-5 py-4 sm:py-5 border-t sm:border-t-0 mt-4 sm:mt-0">
               <h3 className="text-xl font-semibold mb-4 text-white/90">Trending Artists</h3>
               <div className="space-y-2">
                 {rankedArtists.slice(0, 8).map((artist) => (
@@ -256,7 +302,7 @@ export default function TrendingPage() {
               </div>
             </div>
 
-            <div className="sm:rounded-[2rem] sm:border border-white/10 sm:bg-white/[0.05] px-4 sm:px-5 py-4 sm:py-5 border-t border-white/10 sm:border-t-0">
+            <div className="sm:rounded-[2rem] sm:border border-white/10 sm:bg-white/[0.05] px-4 sm:px-5 py-4 sm:py-5 border-t sm:border-t-0">
               <h3 className="text-xl font-semibold mb-4 text-white/90">Top Albums</h3>
               <div className="space-y-2">
                 {rankedAlbums.slice(0, 8).map((album) => (
@@ -282,7 +328,7 @@ export default function TrendingPage() {
           </div>
         </section>
 
-        <section className="sm:rounded-[2rem] sm:border border-white/10 bg-gradient-to-r from-[#131a2a]/40 sm:from-[#131a2a]/80 to-[#1c1320]/40 sm:to-[#1c1320]/80 px-5 py-8 sm:p-6 md:p-8">
+        <section className="sm:rounded-[2rem] sm:border border-white/10 bg-black/35 px-5 py-8 sm:p-6 md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-xl sm:text-2xl font-semibold">How leaderboard scoring works</h3>

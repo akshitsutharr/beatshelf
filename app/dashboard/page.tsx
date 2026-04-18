@@ -178,9 +178,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050608] text-white pb-16">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_0%,rgba(34,197,94,0.16),transparent_35%),radial-gradient(circle_at_88%_25%,rgba(56,189,248,0.16),transparent_34%)]" />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+    <div className="page-shell min-h-screen bg-[#050608] text-white pb-20">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-black" />
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-5 sm:p-7 md:p-9">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -279,7 +279,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#151f1f]/80 to-[#1d1627]/80 p-4 sm:p-5">
+            <div className="rounded-[2rem] border border-white/10 bg-black/35 p-4 sm:p-5">
               <h3 className="text-lg sm:text-xl font-semibold">Quick Actions</h3>
               <div className="mt-3 space-y-2">
                 <Button className="w-full justify-start rounded-xl bg-white text-black hover:bg-white/90" asChild>

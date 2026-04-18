@@ -606,8 +606,8 @@ export default function SongDetailPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#050608] text-white pb-16">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_5%,rgba(56,189,248,0.14),transparent_36%),radial-gradient(circle_at_85%_28%,rgba(244,63,94,0.14),transparent_32%)]" />
+    <div className="relative min-h-screen bg-[#050608] text-white pb-32">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-black" />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 md:p-7">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -855,6 +855,7 @@ export default function SongDetailPage() {
                             __html: review.content
                               .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
                               .replace(/\*(.*?)\*/g, "<em>$1</em>")
+                              .replace(/^>\s*(.*$)/gim, '<blockquote class="border-l-2 border-red-500 pl-3 py-1 italic my-2 text-white/90 bg-white/[0.03] rounded-r-lg font-semibold">$1</blockquote>')
                               .replace(/\n/g, "<br>"),
                           }}
                         />
@@ -907,7 +908,7 @@ export default function SongDetailPage() {
                 <Link key={track.id} href={`/song/${track.id}`} className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] transition-colors">
                   <div className="relative aspect-[4/5] overflow-hidden">
                     <Image src={track.image} alt={track.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-black/55" />
                     <div className="absolute inset-x-0 bottom-0 p-3">
                       <p className="text-sm font-semibold line-clamp-1">{track.name}</p>
                       <p className="text-xs text-white/65 line-clamp-1 mt-1">{track.artistName}</p>

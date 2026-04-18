@@ -53,13 +53,13 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/65 backdrop-blur-2xl supports-[backdrop-filter]:bg-black/50 shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition-colors duration-300">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
+      <nav className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-black/90 transition-colors duration-300">
+        <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-4 lg:gap-6">
             {/* Logo */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 lg:gap-6 min-w-0">
               <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden ring-1 ring-white/10 bg-white/[0.03]">
                   <Image 
                     src="/bslogo.png" 
                     alt="BeatShelf Logo" 
@@ -68,19 +68,19 @@ export function Navbar() {
                     className="w-8 h-8 object-contain"
                   />
                 </div>
-                <span className="font-semibold text-xl tracking-tight text-white">BeatShelf</span>
+                <span className="font-semibold text-lg sm:text-xl tracking-[-0.03em] text-white">BeatShelf</span>
               </Link>
 
               {/* Desktop Navigation */}
-              <div className="hidden lg:flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] p-1">
+              <div className="hidden xl:flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1.5">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     className={`text-sm font-medium transition-colors ${
                       pathname === link.href
-                        ? "text-white bg-white/10 px-3 py-1.5 rounded-full"
-                        : "text-gray-400 hover:text-white px-3 py-1.5 rounded-full"
+                        ? "text-white bg-white/12 px-3.5 py-1.5 rounded-full shadow-[0_8px_22px_rgba(0,0,0,0.22)]"
+                        : "text-white/55 hover:text-white px-3.5 py-1.5 rounded-full"
                     }`}
                   >
                     {link.label}
@@ -90,15 +90,15 @@ export function Navbar() {
             </div>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4 hidden sm:block">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <form onSubmit={handleSearch} className="flex-1 max-w-lg mx-4 hidden md:block">
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-[18px] w-[18px] text-white/40 group-focus-within:text-white/70 transition-colors" />
                 <Input
                   type="search"
-                  placeholder="Search for songs, artists, albums..."
+                  placeholder="Search tracks, artists, albums"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-11 bg-[#0e1628]/85 border-white/15 text-white placeholder:text-white/45 focus:border-sky-500 rounded-2xl"
+                  className="pl-11 h-10 w-full rounded-full border border-white/10 bg-white/[0.05] text-white placeholder:text-white/40 focus:border-white/20 focus:bg-white/[0.08] focus-visible:ring-0 transition-all text-[15px]"
                 />
               </div>
             </form>
@@ -231,10 +231,11 @@ export function Navbar() {
                 </>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" className="text-gray-300 hover:text-white rounded-xl text-sm" asChild>
+                  <Button variant="ghost" className="text-white/70 hover:text-white rounded-xl text-sm" asChild>
                     <Link href="/sign-in">Sign In</Link>
                   </Button>
-                  <Button className="bg-red-500 hover:bg-red-400 text-white rounded-2xl text-sm shadow-[0_8px_30px_rgba(255,59,48,0.35)]" asChild>
+
+                  <Button className="bg-red-500 hover:bg-red-400 text-white rounded-2xl text-sm shadow-[0_8px_30px_rgba(255,59,48,0.28)]" asChild>
                     <Link href="/sign-up">Sign Up</Link>
                   </Button>
                 </div>
@@ -243,16 +244,16 @@ export function Navbar() {
           </div>
 
           {/* Mobile Search Bar */}
-          <div className="sm:hidden pb-4">
+          <div className="md:hidden pb-4">
             <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-[18px] w-[18px] text-white/40" />
                 <Input
                   type="search"
                   placeholder="Search music..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-11 bg-[#0e1628]/85 border-white/15 text-white placeholder:text-white/45 focus:border-sky-500 rounded-2xl"
+                  className="pl-11 h-11 w-full rounded-full border border-white/10 bg-white/[0.05] text-white placeholder:text-white/40 focus:border-white/20 focus-visible:ring-0 transition-all text-base"
                 />
               </div>
             </form>
@@ -260,23 +261,29 @@ export function Navbar() {
         </div>
       </nav>
 
-      <div className="md:hidden fixed bottom-3 left-3 right-3 z-50">
-        <div className="rounded-2xl border border-white/10 bg-black/85 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] px-2 py-2">
-          <div className="grid grid-cols-5 gap-1 text-[11px] text-white/75">
-            <Link href="/" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
+      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1rem)] max-w-[480px]">
+        <div className="rounded-[1.5rem] border border-white/10 bg-black/90 px-3 py-2.5">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar text-[10px] font-medium text-white/65">
+            <Link href="/" className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 transition-colors ${pathname === '/' ? 'bg-white/12 text-white' : 'hover:bg-white/6 hover:text-white'}`}>
               <House className="h-4 w-4" /> Home
             </Link>
-            <Link href="/trending" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
-              <TrendingUp className="h-4 w-4" /> Trend
+            <Link href="/trending" className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 transition-colors ${pathname === '/trending' ? 'bg-white/12 text-white' : 'hover:bg-white/6 hover:text-white'}`}>
+              <TrendingUp className="h-4 w-4" /> Trending
             </Link>
-            <Link href="/explore" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
+            <Link href="/explore" className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 transition-colors ${pathname === '/explore' ? 'bg-white/12 text-white' : 'hover:bg-white/6 hover:text-white'}`}>
               <Compass className="h-4 w-4" /> Explore
             </Link>
-            <Link href="/dashboard" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
-              <User className="h-4 w-4" /> Profile
+            <Link href="/artists" className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 transition-colors ${pathname === '/artists' ? 'bg-white/12 text-white' : 'hover:bg-white/6 hover:text-white'}`}>
+              <Users className="h-4 w-4" /> Artists
             </Link>
-            <Link href="/albums" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
+            <Link href="/albums" className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 transition-colors ${pathname === '/albums' ? 'bg-white/12 text-white' : 'hover:bg-white/6 hover:text-white'}`}>
               <Disc3 className="h-4 w-4" /> Albums
+            </Link>
+            <Link href="/reviews" className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 transition-colors ${pathname === '/reviews' ? 'bg-white/12 text-white' : 'hover:bg-white/6 hover:text-white'}`}>
+              <MessageCircle className="h-4 w-4" /> Reviews
+            </Link>
+            <Link href="/dashboard" className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 transition-colors ${pathname === '/dashboard' ? 'bg-white/12 text-white' : 'hover:bg-white/6 hover:text-white'}`}>
+              <User className="h-4 w-4" /> Dashboard
             </Link>
           </div>
         </div>

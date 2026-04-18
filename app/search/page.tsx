@@ -114,22 +114,22 @@ export default function SearchPage() {
                 <h3 className="text-lg font-medium">Artists</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                   {artistResults.map((artist) => (
-                    <article key={artist.id} className="flex flex-col items-center gap-3">
-                      <div className="relative w-full aspect-square rounded-full overflow-hidden border border-white/10 bg-white/5">
+                    <Link href={`/artist/${artist.id}`} key={artist.id} className="flex flex-col items-center gap-3 group cursor-pointer">
+                      <div className="relative w-full aspect-square rounded-full overflow-hidden border border-white/10 bg-white/5 group-hover:border-white/30 transition-colors">
                         <Image
                           src={artist.images?.[0]?.url || "/placeholder.svg?height=200&width=200"}
                           alt={artist.name}
                           fill
-                          className="object-cover"
+                          className="object-cover group-hover:scale-105 transition-transform"
                         />
                       </div>
-                      <div className="text-center w-full">
+                      <div className="text-center w-full group-hover:text-white transition-colors">
                         <p className="font-medium text-sm line-clamp-1">{artist.name}</p>
                         <p className="text-xs text-white/50 capitalize mt-1 line-clamp-1">
                           {artist.genres?.[0] || 'Artist'}
                         </p>
                       </div>
-                    </article>
+                    </Link>
                   ))}
                 </div>
               </div>

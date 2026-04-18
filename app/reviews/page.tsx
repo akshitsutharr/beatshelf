@@ -206,9 +206,9 @@ export default function ReviewsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050608] text-white pb-16">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_8%_0%,rgba(251,146,60,0.17),transparent_35%),radial-gradient(circle_at_88%_22%,rgba(56,189,248,0.15),transparent_33%)]" />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-7">
+    <div className="page-shell min-h-screen bg-[#050608] text-white pb-20">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-black" />
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8 pt-8 space-y-7">
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-7 md:p-9">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>

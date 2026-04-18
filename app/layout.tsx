@@ -1,13 +1,13 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import { Space_Grotesk } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Navbar } from "@/components/navbar"
 import { Toaster } from "@/components/ui/toaster"
 
-const inter = Inter({ subsets: ["latin"] })
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: 'BeatShelf - Discover, Review, and Share Music',
@@ -66,12 +66,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[#050608] text-white`}>
+      <body className={`${spaceGrotesk.className} bg-[#050608] text-white antialiased`}>
+        <div className="fixed inset-0 -z-20 bg-black" />
         <ClerkProvider>
           <AuthProvider>
-            <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-black">
+            <div className="relative flex min-h-screen flex-col overflow-x-hidden">
               <Navbar />
-              <main className="flex-1 relative">{children}</main>
+              <main className="flex-1 relative z-0">{children}</main>
               <Toaster />
             </div>
           </AuthProvider>

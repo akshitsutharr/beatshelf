@@ -84,9 +84,9 @@ export default function ArtistsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050608] text-white pb-16">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_8%_0%,rgba(249,115,22,0.18),transparent_35%),radial-gradient(circle_at_88%_22%,rgba(56,189,248,0.15),transparent_33%)]" />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+    <div className="page-shell min-h-screen bg-[#050608] text-white pb-20">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-black" />
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-7 md:p-9">
           <p className="text-xs uppercase tracking-[0.2em] text-white/50">Discover</p>
           <h1 className="text-4xl md:text-5xl font-semibold mt-2 tracking-tight">Artists</h1>
@@ -117,7 +117,7 @@ export default function ArtistsPage() {
                       fill
                       className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-transparent" />
+                    <div className="absolute inset-0 bg-black/45" />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-2">
                       {trend ? (
                         <Badge className="rounded-full bg-orange-500/30 text-orange-200 border-orange-400/40">

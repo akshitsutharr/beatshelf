@@ -209,7 +209,6 @@ const RATING_META: Record<number, { word: string; color: string }> = {
   5: { word: "FIRE 🔥", color: "#ef4444" },
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 const stripHtml = (html: string) => {
   if (!html) return ""
   const d = document.createElement("div")
@@ -218,6 +217,26 @@ const stripHtml = (html: string) => {
 }
 
 const trunc = (t: string, n: number) => (t.length <= n ? t : t.slice(0, n).trim() + "…")
+
+const parseReviewForCard = (html: string) => {
+  if (!html) return ""
+  // First strip HTML from the rich text editor output
+  const d = document.createElement("div")
+  d.innerHTML = html
+  let text = d.textContent || d.innerText || ""
+  
+  // Then parse markdown symbols into HTML for the card
+  text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+  text = text.replace(/\*(.*?)\*/g, "<em>$1</em>")
+  text = text.replace(/^>\s*(.*$)/gim, '<strong style="font-style: normal; display: block; margin: 4px 0; font-size: 1.05em; font-weight: 800; border-left: 2px solid currentColor; padding-left: 8px;">$1</strong>')
+  return text
+}
+
+const truncHtml = (t: string, n: number) => {
+  // Strip tags just to check length, if we want to get fancy with true truncate
+  const plainText = stripHtml(t);
+  return plainText.length <= n ? t : t // Let it overflow or line-clamp instead of cutting tags abruptly, which breaks HTML
+}
 
 const fmtDate = (s: string) => {
   try {
@@ -250,7 +269,7 @@ function CardPreview({
   const t = theme
   const safeRating = Math.max(1, Math.min(5, Math.round(reviewData.rating || 3)))
   const ratingMeta = RATING_META[safeRating]
-  const cleanText = stripHtml(reviewData.reviewContent || "")
+  const formattedText = parseReviewForCard(reviewData.reviewContent || "")
   const isCentered = layout === "centered"
   const isEditorial = layout === "editorial"
   const isSide = layout === "side"
@@ -391,7 +410,7 @@ function CardPreview({
                 backdropFilter: "blur(20px)",
               }}>
                 <div style={{ color: t.secondary, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Review</div>
-                <div style={{ color: t.primary, fontSize: 15, lineHeight: 1.65, fontStyle: "italic" }}>"{trunc(cleanText, 200)}"</div>
+                <div style={{ color: t.primary, fontSize: 15, lineHeight: 1.65, fontStyle: "italic" }} dangerouslySetInnerHTML={{ __html: `"${formattedText}"` }} />
               </div>
               {/* Footer */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -445,9 +464,7 @@ function CardPreview({
                   borderLeft: `3px solid ${t.accent}`,
                   paddingLeft: 20,
                 }}>
-                  <div style={{ color: t.primary, fontSize: size.w < 600 ? 17 : 19, lineHeight: 1.7, fontStyle: "italic", fontWeight: 500 }}>
-                    "{trunc(cleanText, size.h > 700 ? 320 : 200)}"
-                  </div>
+                  <div style={{ color: t.primary, fontSize: size.w < 600 ? 17 : 19, lineHeight: 1.7, fontStyle: "italic", fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: `"${formattedText}"` }} />
                 </div>
               </div>
               <div style={{ height: 1, background: t.border }} />
@@ -506,7 +523,7 @@ function CardPreview({
                 backdropFilter: "blur(20px)", textAlign: "center",
               }}>
                 <div style={{ color: t.accent, fontSize: 40, lineHeight: 0.8, marginBottom: 8, fontFamily: "serif" }}>"</div>
-                <div style={{ color: t.primary, fontSize: 15, lineHeight: 1.7, fontStyle: "italic" }}>{trunc(cleanText, 220)}</div>
+                <div style={{ color: t.primary, fontSize: 15, lineHeight: 1.7, fontStyle: "italic" }} dangerouslySetInnerHTML={{ __html: formattedText }} />
               </div>
               {/* Footer */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -562,7 +579,7 @@ function CardPreview({
                     <div style={{ color: t.tertiary, fontSize: 12, marginTop: 2 }}>{trunc(reviewData.albumName, 32)}</div>
                   </div>
                   <div style={{ height: 1, background: t.border }} />
-                  <div style={{ color: t.primary, fontSize: 14, lineHeight: 1.7, fontStyle: "italic" }}>"{trunc(cleanText, 260)}"</div>
+                  <div style={{ color: t.primary, fontSize: 14, lineHeight: 1.7, fontStyle: "italic" }} dangerouslySetInnerHTML={{ __html: `"${formattedText}"` }} />
                   <div style={{ marginTop: "auto" }}>
                     <div style={{ color: t.primary, fontSize: 13, fontWeight: 700 }}>@{reviewData.username || "user"}</div>
                     <div style={{ color: t.tertiary, fontSize: 11 }}>{fmtDate(reviewData.reviewDate)}</div>

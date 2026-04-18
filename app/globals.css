@@ -6,7 +6,65 @@
 	.text-balance {
 		text-wrap: balance;
 	}
+
+  .mask-edges-x {
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
+	.beatshelf-noise {
+		background-image: radial-gradient(rgba(255, 255, 255, 0.08) 0.7px, transparent 0.7px);
+		background-size: 3px 3px;
+		mix-blend-mode: soft-light;
+	}
+
+	.marquee-track {
+		display: inline-flex;
+		width: max-content;
+		animation: beatshelf-marquee 34s linear infinite;
+		white-space: nowrap;
+		will-change: transform;
+	}
+
+	.float-slow {
+		animation: beatshelf-float 6.5s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+		will-change: transform;
+	}
+
+	.page-shell {
+		position: relative;
+		isolation: isolate;
+	}
+
+	.page-shell::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: transparent;
+		z-index: -2;
+	}
 }
+
+@keyframes beatshelf-marquee {
+	from {
+		transform: translate3d(0, 0, 0);
+	}
+	to {
+		transform: translate3d(-50%, 0, 0);
+	}
+}
+
+@keyframes beatshelf-float {
+	0%,
+	100% {
+		transform: translate3d(0, 0, 0) rotate(-2deg);
+	}
+	50% {
+		transform: translate3d(0, -9px, 0) rotate(-0.5deg);
+	}
+}
+
 
 @layer base {
 	:root {
@@ -46,24 +104,24 @@
 	}
 
 	.dark {
-		--background: 0 0% 3.9%;
+		--background: 220 18% 4%;
 		--foreground: 0 0% 98%;
-		--card: 0 0% 3.9%;
+		--card: 220 16% 7%;
 		--card-foreground: 0 0% 98%;
-		--popover: 0 0% 3.9%;
+		--popover: 220 16% 7%;
 		--popover-foreground: 0 0% 98%;
 		--primary: 0 0% 98%;
 		--primary-foreground: 0 0% 9%;
-		--secondary: 0 0% 14.9%;
+		--secondary: 220 14% 11%;
 		--secondary-foreground: 0 0% 98%;
-		--muted: 0 0% 14.9%;
-		--muted-foreground: 0 0% 63.9%;
-		--accent: 0 0% 14.9%;
+		--muted: 220 14% 11%;
+		--muted-foreground: 0 0% 65%;
+		--accent: 0 0% 6%;
 		--accent-foreground: 0 0% 98%;
-		--destructive: 0 62.8% 30.6%;
+		--destructive: 0 78% 54%;
 		--destructive-foreground: 0 0% 98%;
-		--border: 0 0% 14.9%;
-		--input: 0 0% 14.9%;
+		--border: 220 12% 13%;
+		--input: 220 12% 13%;
 		--ring: 0 0% 83.1%;
 		--chart-1: 220 70% 50%;
 		--chart-2: 160 60% 45%;
@@ -86,12 +144,19 @@
 		@apply border-border;
 	}
 
+  ::selection {
+    background-color: rgba(239, 68, 68, 0.3);
+    color: white;
+  }
+
 	body {
 		@apply bg-background text-foreground;
 		text-rendering: optimizeLegibility;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 		overflow-x: hidden;
+		scroll-behavior: smooth;
+		background: #050608;
 	}
 }
 

@@ -105,9 +105,9 @@ export default function AlbumsPage() {
   }, [tracks, realReviews])
 
   return (
-    <div className="min-h-screen bg-[#050608] text-white pb-16">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_8%_0%,rgba(56,189,248,0.18),transparent_35%),radial-gradient(circle_at_88%_30%,rgba(244,63,94,0.18),transparent_35%)]" />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+    <div className="page-shell min-h-screen bg-[#050608] text-white pb-20">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-black" />
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-7 md:p-9">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -142,7 +142,7 @@ export default function AlbumsPage() {
                   <Link href={`/album/${album.id}`}>
                     <div className="relative aspect-[4/5] overflow-hidden">
                       <Image src={album.images[0]?.url || "/placeholder.svg?height=600&width=480"} alt={album.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                      <div className="absolute inset-0 bg-black/55" />
                       <div className="absolute bottom-0 p-4 w-full">
                         <h3 className="text-xl font-semibold line-clamp-1">{album.name}</h3>
                         <p className="text-sm text-white/70 line-clamp-1">{album.artists.map((a) => a.name).join(", ")}</p>
@@ -194,7 +194,7 @@ export default function AlbumsPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#142138]/80 to-[#261626]/80 p-6 md:p-8">
+        <section className="rounded-[2rem] border border-white/10 bg-black/35 p-6 md:p-8">
           <h3 className="text-2xl font-semibold">Community Feedback Snapshot</h3>
           <div className="mt-4 grid sm:grid-cols-3 gap-3">
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">

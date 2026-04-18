@@ -152,9 +152,9 @@ export default function ExplorePage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#050608] text-white pb-16">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_0%,rgba(16,185,129,0.2),transparent_35%),radial-gradient(circle_at_85%_35%,rgba(251,113,133,0.17),transparent_32%)]" />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+    <div className="page-shell relative min-h-screen bg-[#050608] text-white pb-20">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-black" />
+      <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
         <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-5 sm:p-7 md:p-9">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -205,82 +205,93 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 sm:p-5 md:p-6 space-y-5">
-          <div className="flex items-center gap-2 text-white/75"><Filter className="w-4 h-4" /> Filters</div>
+        <section className="sm:rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-2xl px-5 py-6 sm:p-8">
 
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs uppercase text-white/45 tracking-[0.16em] mb-2">Genre</p>
-              <Tabs value={genre} onValueChange={setGenre}>
-                <TabsList className="grid grid-cols-2 sm:grid-cols-4 h-auto rounded-2xl bg-black/35 border border-white/10 p-1 gap-1">
-                  {GENRES.map((item) => (
-                    <TabsTrigger key={item} value={item} className="rounded-xl capitalize data-[state=active]:bg-white data-[state=active]:text-black text-xs sm:text-sm">
-                      {item}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
+          {/* HEADER */}
+          <div className="flex items-center gap-2 text-white/70 mb-6">
+            <Filter className="w-4 h-4" />
+            <span className="text-sm font-medium tracking-wide">Filters</span>
+          </div>
 
-            <div>
-              <p className="text-xs uppercase text-white/45 tracking-[0.16em] mb-2">Mood</p>
-              <div className="flex flex-wrap gap-2">
-                {MOODS.map((item) => (
-                  <Button
-                    key={item}
-                    variant="outline"
-                    onClick={() => setMood(item)}
-                    className={`rounded-xl capitalize border-white/15 ${mood === item ? "bg-white text-black" : "bg-black/35 hover:bg-white/10"}`}
-                  >
-                    {item}
-                  </Button>
-                ))}
-              </div>
-            </div>
+          {/* GENRE */}
+          <div className="mb-6">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-white/40 mb-3">Genre</p>
 
-            <div>
-              <p className="text-xs uppercase text-white/45 tracking-[0.16em] mb-2">Popularity</p>
-              <div className="flex flex-wrap gap-2">
-                {POPULARITY.map((item) => (
-                  <Button
-                    key={item}
-                    variant="outline"
-                    onClick={() => setPopularity(item)}
-                    className={`rounded-xl capitalize border-white/15 ${popularity === item ? "bg-white text-black" : "bg-black/35 hover:bg-white/10"}`}
-                  >
-                    {item}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs uppercase text-white/45 tracking-[0.16em] mb-2">Sort</p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setSortMode("reviews")}
-                  className={`rounded-xl border-white/15 ${sortMode === "reviews" ? "bg-white text-black" : "bg-black/35 hover:bg-white/10"}`}
+            <div className="flex flex-wrap gap-2">
+              {["Pop","Rock","Hip-Hop","Electronic","Jazz","Indie","R&B","Latin"].map((g) => (
+                <button
+                  key={g}
+                  className="px-4 py-2 rounded-xl text-sm text-white/60 border border-white/10 
+                  bg-white/[0.02] hover:bg-white/[0.08] hover:text-white
+                  transition-all duration-200
+                  data-[active=true]:bg-white data-[active=true]:text-black data-[active=true]:border-white"
                 >
-                  Most Reviewed
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setSortMode("rating")}
-                  className={`rounded-xl border-white/15 ${sortMode === "rating" ? "bg-white text-black" : "bg-black/35 hover:bg-white/10"}`}
-                >
-                  Highest Rated
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={resetFilters}
-                  className="rounded-xl border-white/15 bg-black/35 hover:bg-white/10"
-                >
-                  Reset
-                </Button>
-              </div>
+                  {g}
+                </button>
+              ))}
             </div>
           </div>
+
+          {/* MOOD */}
+          <div className="mb-6">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-white/40 mb-3">Mood</p>
+
+            <div className="flex flex-wrap gap-2">
+              {["Energetic","Chill","Melancholic","Romantic"].map((m) => (
+                <button
+                  key={m}
+                  className="px-4 py-2 rounded-xl text-sm text-white/60 border border-white/10 
+                  bg-white/[0.02] hover:bg-white/[0.08] hover:text-white
+                  transition-all duration-200
+                  data-[active=true]:bg-white data-[active=true]:text-black"
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* POPULARITY */}
+          <div className="mb-6">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-white/40 mb-3">Popularity</p>
+
+            <div className="flex flex-wrap gap-2">
+              {["Rising","Mainstream","Deep Cuts"].map((p) => (
+                <button
+                  key={p}
+                  className="px-4 py-2 rounded-xl text-sm text-white/60 border border-white/10 
+                  bg-white/[0.02] hover:bg-white/[0.08] hover:text-white
+                  transition-all duration-200
+                  data-[active=true]:bg-white data-[active=true]:text-black
+                  disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* SORT */}
+          <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/10">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-white/40 mr-2">Sort</p>
+
+            {["Most Reviewed","Highest Rated"].map((s) => (
+              <button
+                key={s}
+                className="px-4 py-2 rounded-xl text-sm text-white/60 border border-white/10 
+                bg-white/[0.02] hover:bg-white/[0.08] hover:text-white
+                transition-all duration-200
+                data-[active=true]:bg-white data-[active=true]:text-black"
+              >
+                {s}
+              </button>
+            ))}
+
+            <button className="ml-auto px-4 py-2 rounded-xl text-sm text-white/50 hover:text-white border border-white/10 hover:bg-white/10 transition">
+              Reset
+            </button>
+          </div>
+
         </section>
 
         <section className="space-y-4">
@@ -310,7 +321,7 @@ export default function ExplorePage() {
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+                        <div className="absolute inset-0 bg-black/55" />
                         <div className="absolute bottom-0 p-4 w-full">
                           <p className="text-lg sm:text-xl font-semibold line-clamp-1">{track.name}</p>
                           <p className="text-sm text-white/70 line-clamp-1">{track.artists.map((a) => a.name).join(", ")}</p>

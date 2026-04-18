@@ -168,14 +168,14 @@ export default function WriteReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-2">
               <PenTool className="h-8 w-8 text-primary" />
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold text-foreground">
                 Write a Review
               </h1>
             </div>
@@ -312,7 +312,7 @@ export default function WriteReviewPage() {
                 size="lg"
                 onClick={handleSubmit}
                 disabled={loading || !rating || !reviewContent.trim()}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {loading ? "Publishing..." : "Publish Review"}
               </Button>

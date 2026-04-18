@@ -25,7 +25,7 @@ export default async function ArtistPage({
     <div className="relative min-h-screen bg-[#050608] text-white pb-16 overflow-hidden">
       <div className="absolute inset-0 -z-10 pointer-events-none">
         <Image src={artistImage} alt={data.artist.name} fill className="object-cover opacity-25 blur-[120px] scale-125" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-[#050608]" />
+        <div className="absolute inset-0 bg-black/75" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">

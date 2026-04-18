@@ -5,10 +5,11 @@ import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { MessageSquareText, Clock, Loader2, ArrowLeft } from "lucide-react"
+import { MessageSquareText, Clock, Loader2, ArrowLeft, Download, Share } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
+import { ReviewCardGenerator } from "@/components/review-card-generator"
 import { StarRating } from "@/components/ui/star-rating"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
@@ -48,6 +49,8 @@ export default function AlbumPage() {
   const [albumRating, setAlbumRating] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showCardGenerator, setShowCardGenerator] = useState(false)
+  const [selectedReviewData, setSelectedReviewData] = useState<any>(null)
 
   useEffect(() => {
     if (albumId) {
@@ -94,7 +97,7 @@ export default function AlbumPage() {
   }
 
   const submitAlbumReview = async () => {
-    if (!user || !album || !albumReview.trim()) {
+    if (!user || !album || !albumReview.trim() || !albumRating) {
       toast({ title: "Missing information", description: "Please add a rating and review.", variant: "destructive" })
       return
     }
@@ -142,6 +145,49 @@ export default function AlbumPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleGenerateCard = (reviewData?: any) => {
+    let cardData
+
+    if (reviewData) {
+      cardData = {
+        songName: album?.name || "Unknown Album",
+        artistName: album?.artists.map((a) => a.name).join(", ") || "Unknown Artist",
+        albumName: album?.name || "Unknown Album",
+        albumImage: album?.images[0]?.url || "/placeholder.svg?height=400&width=400",
+        username: reviewData.profiles?.username || "Anonymous",
+        reviewContent: reviewData.content,
+        // Since we didn't fetch ratings for individual album reviews yet, we'll default to 0
+        rating: 0,
+        reviewDate: reviewData.created_at,
+        mediaType: "album",
+      }
+    } else {
+      if (!album || !user || !albumReview.trim() || !albumRating) {
+        toast({
+          title: "Missing information",
+          description: "Please add a rating and review before generating a card",
+          variant: "destructive",
+        })
+        return
+      }
+
+      cardData = {
+        songName: album.name,
+        artistName: album.artists.map((a) => a.name).join(", "),
+        albumName: album.name,
+        albumImage: album.images[0]?.url || "/placeholder.svg?height=400&width=400",
+        username: user.user_metadata?.username || user.email?.split("@")[0] || "User",
+        reviewContent: albumReview,
+        rating: albumRating,
+        reviewDate: new Date().toISOString(),
+        mediaType: "album",
+      }
+    }
+
+    setSelectedReviewData(cardData)
+    setShowCardGenerator(true)
   }
 
   const formatDuration = (ms: number) => {
@@ -192,10 +238,10 @@ export default function AlbumPage() {
           fill
           className="object-cover opacity-30 blur-[100px] scale-125 translate-y-[-10%]"
         />
-        <div className="absolute inset-0 top-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
+        <div className="absolute inset-0 top-0 bg-black/75" />
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl overflow-x-hidden">
+      <div className="container mx-auto px-4 py-8 pb-32 max-w-6xl overflow-x-hidden">
         <Button 
           onClick={() => router.back()} 
           variant="ghost" 
@@ -297,13 +343,21 @@ export default function AlbumPage() {
                 onChange={setAlbumReview}
                 placeholder="Share your overall thoughts on this album..."
               />
-              <Button
-                onClick={submitAlbumReview}
-                disabled={submitting || !albumReview.trim()}
-                className="rounded-xl bg-red-500 hover:bg-red-400 text-white"
-              >
-                {submitting ? "Publishing..." : "Publish Album Review"}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={submitAlbumReview}
+                  disabled={submitting || !albumReview.trim() || !albumRating}
+                  className="rounded-xl bg-red-500 hover:bg-red-400 text-white"
+                >
+                  {submitting ? "Publishing..." : "Publish Album Review"}
+                </Button>
+                {albumReview.trim() && albumRating > 0 && (
+                  <Button onClick={() => handleGenerateCard()} variant="outline" className="rounded-xl border-white/25 bg-transparent hover:bg-white/10 text-white">
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Card
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -319,14 +373,44 @@ export default function AlbumPage() {
               <article key={review.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-medium text-white">{review.profiles?.username || "Anonymous"}</p>
-                  <p className="text-xs text-white/50">{new Date(review.created_at).toLocaleDateString()}</p>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleGenerateCard(review)}
+                      className="h-8 w-8 text-white/50 hover:text-white"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <p className="text-xs text-white/50">{new Date(review.created_at).toLocaleDateString()}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-white/80 mt-3 line-clamp-5">{review.content}</p>
+                <div
+                  className="text-sm text-white/80 mt-3 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: review.content
+                      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+                      .replace(/^>\s*(.*$)/gim, '<blockquote class="border-l-2 border-red-500 pl-3 py-1 italic my-2 text-white/90 bg-white/[0.03] rounded-r-lg font-semibold">$1</blockquote>')
+                      .replace(/\n/g, "<br>"),
+                  }}
+                />
               </article>
             ))
           )}
         </div>
       </div>
+      
+      {showCardGenerator && selectedReviewData && (
+        <ReviewCardGenerator
+          reviewData={selectedReviewData}
+          isOpen={showCardGenerator}
+          onClose={() => {
+            setShowCardGenerator(false)
+            setSelectedReviewData(null)
+          }}
+        />
+      )}
     </div>
   )
 }
