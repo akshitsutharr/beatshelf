@@ -36,7 +36,7 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push("/auth/signin")
+      router.push("/sign-in")
       return
     }
     fetchFavorites()

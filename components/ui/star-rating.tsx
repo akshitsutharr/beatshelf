@@ -10,7 +10,7 @@ interface StarRatingProps {
   readonly?: boolean
   size?: "sm" | "md" | "lg"
   className?: string
-  forceShowStars?: boolean // New prop to always show stars even on mobile
+  forceShowStars?: boolean
 }
 
 export function StarRating({ rating, onRatingChange, readonly = false, size = "md", className, forceShowStars = false }: StarRatingProps) {
@@ -40,26 +40,24 @@ export function StarRating({ rating, onRatingChange, readonly = false, size = "m
     }
   }
 
-  const displayRating = hoverRating || rating
+  const displayRating = Math.max(0, Math.min(5, hoverRating || rating || 0))
 
   return (
     <div className={cn("flex items-center gap-0.5 sm:gap-1", className)}>
-      {/* Show only rating number on mobile (unless forceShowStars is true or component is interactive) */}
       {!forceShowStars && !onRatingChange && (
         <div className="sm:hidden">
           <span className="text-xs font-medium text-gray-300">{displayRating.toFixed(1)}/5</span>
         </div>
       )}
       
-      {/* Show stars on larger screens, or always if forceShowStars is true or component is interactive */}
       <div className={cn(
         "flex items-center gap-1",
         !forceShowStars && !onRatingChange ? "hidden sm:flex" : "flex"
       )}>
-        {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((value) => {
-          const isHalf = value % 1 !== 0
-          const isFilled = displayRating >= value
-          const isPartiallyFilled = !isHalf && displayRating >= value - 0.5 && displayRating < value
+        {[1, 2, 3, 4, 5].map((value) => {
+          const fillPercentage = Math.max(0, Math.min(1, displayRating - (value - 1))) * 100
+          const isFilled = fillPercentage === 100
+          const isPartiallyFilled = fillPercentage > 0 && fillPercentage < 100
 
           return (
             <button
@@ -79,22 +77,16 @@ export function StarRating({ rating, onRatingChange, readonly = false, size = "m
                 className={cn(
                   sizeClasses[size],
                   "transition-all duration-300",
-                  isFilled
-                    ? "fill-red-500 text-red-500 drop-shadow-sm"
-                    : isPartiallyFilled
-                      ? "fill-red-300 text-red-500"
-                      : "fill-transparent text-gray-600",
+                  isFilled ? "fill-red-500 text-red-500 drop-shadow-sm" : "fill-transparent text-gray-600",
                 )}
               />
-              {isHalf && (
-                <div className="absolute inset-0 overflow-hidden" style={{ width: "50%" }}>
+              {isPartiallyFilled && (
+                <div className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercentage}%` }}>
                   <Star
                     className={cn(
                       sizeClasses[size],
                       "transition-all duration-300",
-                      displayRating >= value
-                        ? "fill-red-500 text-red-500 drop-shadow-sm"
-                        : "fill-transparent text-gray-600",
+                      "fill-red-500 text-red-500 drop-shadow-sm",
                     )}
                   />
                 </div>

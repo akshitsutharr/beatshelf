@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { Compass, Filter, Loader2, MessageCircle, Search, Sparkles } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Compass, Play, Shuffle, Music, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StarRating } from "@/components/ui/star-rating"
+import { supabase } from "@/lib/supabase"
 
 interface SpotifyTrack {
   id: string
@@ -16,274 +18,341 @@ interface SpotifyTrack {
   album: {
     name: string
     images: Array<{ url: string }>
-    release_date: string
   }
-  duration_ms: number
-  preview_url: string | null
 }
 
-const MAIN_GENRES = [
-  { id: "pop", name: "Pop", color: "bg-pink-600" },
-  { id: "rock", name: "Rock", color: "bg-red-600" },
-  { id: "hip-hop", name: "Hip Hop", color: "bg-purple-600" },
-  { id: "electronic", name: "Electronic", color: "bg-blue-600" },
-  { id: "jazz", name: "Jazz", color: "bg-yellow-600" },
-  { id: "classical", name: "Classical", color: "bg-indigo-600" },
-  { id: "country", name: "Country", color: "bg-green-600" },
-  { id: "r&b", name: "R&B", color: "bg-orange-600" },
-  { id: "indie", name: "Indie", color: "bg-teal-600" },
-  { id: "latin", name: "Latin", color: "bg-rose-600" },
-]
+const GENRES = ["pop", "rock", "hip-hop", "electronic", "jazz", "indie", "r&b", "latin"]
+const MOODS = ["energetic", "chill", "melancholic", "romantic"]
+const POPULARITY = ["rising", "mainstream", "deep cuts"]
+const QUICK_SEARCHES = ["new releases", "viral songs", "indie gems", "late night pop"]
 
 export default function ExplorePage() {
-  const [genreData, setGenreData] = useState<Record<string, SpotifyTrack[]>>({})
-  const [selectedGenre, setSelectedGenre] = useState("pop")
-  const [randomTracks, setRandomTracks] = useState<SpotifyTrack[]>([])
+  const [tracks, setTracks] = useState<SpotifyTrack[]>([])
   const [loading, setLoading] = useState(true)
-  const [genreLoading, setGenreLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [genre, setGenre] = useState("pop")
+  const [mood, setMood] = useState("energetic")
+  const [popularity, setPopularity] = useState("rising")
+  const [visibleCount, setVisibleCount] = useState(18)
+  const [sortMode, setSortMode] = useState<"reviews" | "rating">("reviews")
+  const searchCacheRef = useRef<Map<string, SpotifyTrack[]>>(new Map())
+
+  const [realReviews, setRealReviews] = useState<Array<{ song_id: string }>>([])
+  const [realRatings, setRealRatings] = useState<Array<{ song_id: string, rating: number }>>([])
 
   useEffect(() => {
-    fetchGenreData()
-    fetchRandomTracks()
+    fetchCommunityData()
   }, [])
 
-  const fetchGenreData = async () => {
+  const fetchCommunityData = async () => {
+    try {
+      const [{ data: reviewsData }, { data: ratingsData }] = await Promise.all([
+        supabase.from("reviews").select("song_id"),
+        supabase.from("ratings").select("song_id, rating")
+      ])
+      if (reviewsData) setRealReviews(reviewsData)
+      if (ratingsData) setRealRatings(ratingsData)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    fetchGenreTracks(genre)
+  }, [genre])
+
+  const fetchGenreTracks = async (selectedGenre: string) => {
     setLoading(true)
     try {
-      const response = await fetch("/api/spotify/genres-data")
-      if (response.ok) {
-        const data = await response.json()
-        setGenreData(data.genres || {})
+      const response = await fetch(`/api/spotify/random-songs?genre=${selectedGenre}&limit=70`)
+      if (!response.ok) {
+        setTracks([])
+        return
       }
+      const data = await response.json()
+      setTracks(data.tracks || [])
+      setVisibleCount(18)
     } catch (error) {
-      console.error("Error fetching genre data:", error)
+      console.error("Error fetching genre tracks:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchRandomTracks = async () => {
-    try {
-      const response = await fetch("/api/spotify/random-songs?limit=100")
-      if (response.ok) {
-        const data = await response.json()
-        setRandomTracks(data.tracks || [])
-      }
-    } catch (error) {
-      console.error("Error fetching random tracks:", error)
-    }
-  }
+  const handleSearch = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return
 
-  const refreshGenre = async (genre: string) => {
-    setGenreLoading(true)
+    const cached = searchCacheRef.current.get(query)
+    if (cached) {
+      setTracks(cached)
+      setVisibleCount(18)
+      return
+    }
+
+    setLoading(true)
     try {
-      const response = await fetch(`/api/spotify/random-songs?genre=${genre}&limit=50`)
-      if (response.ok) {
-        const data = await response.json()
-        setGenreData((prev) => ({
-          ...prev,
-          [genre]: data.tracks || [],
-        }))
+      const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`)
+      if (!response.ok) {
+        setTracks([])
+        return
       }
+      const data = await response.json()
+      const fromSearch: SpotifyTrack[] = (data?.tracks?.items || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        artists: item.artists || [],
+        album: item.album,
+      }))
+      searchCacheRef.current.set(query, fromSearch)
+      setTracks(fromSearch)
+      setVisibleCount(18)
     } catch (error) {
-      console.error("Error refreshing genre:", error)
+      console.error("Search error:", error)
     } finally {
-      setGenreLoading(false)
+      setLoading(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-red-600 mx-auto" />
-          <p className="text-white text-lg">Loading music genres...</p>
-        </div>
-      </div>
-    )
+  const filtered = useMemo(() => {
+    return tracks
+      .filter((track) => {
+        const haystack = `${track.name} ${track.artists.map((a) => a.name).join(" ")} ${track.album.name}`.toLowerCase()
+        return !searchQuery || haystack.includes(searchQuery.toLowerCase())
+      })
+      .map((track) => {
+        const id = track.id
+        const reviews = realReviews.filter(r => r.song_id === id).length
+        const ratings = realRatings.filter(r => r.song_id === id)
+        const avgRating = ratings.length > 0 ? Number((ratings.reduce((s, r)=> s + r.rating, 0) / ratings.length).toFixed(1)) : 0
+        return { ...track, syntheticRating: avgRating, reviews }
+      })
+      .sort((a, b) => (sortMode === "reviews" ? b.reviews - a.reviews : b.syntheticRating - a.syntheticRating))
+  }, [tracks, searchQuery, sortMode, realReviews, realRatings])
+
+  const visibleTracks = filtered.slice(0, visibleCount)
+
+  const loadMore = () => {
+    setLoadingMore(true)
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + 12)
+      setLoadingMore(false)
+    }, 350)
+  }
+
+  const resetFilters = () => {
+    setSearchQuery("")
+    setGenre("pop")
+    setMood("energetic")
+    setPopularity("rising")
+    setSortMode("reviews")
+    fetchGenreTracks("pop")
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
-        <div className="space-y-6 sm:space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-3 sm:space-y-4">
-            <div className="flex items-center justify-center gap-1 sm:gap-2">
-              <Compass className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Explore Music</h1>
+    <div className="relative min-h-screen bg-[#050608] text-white pb-16">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_0%,rgba(16,185,129,0.2),transparent_35%),radial-gradient(circle_at_85%_35%,rgba(251,113,133,0.17),transparent_32%)]" />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-7 md:p-9">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-white/50">Discovery Engine</p>
+              <h1 className="text-4xl md:text-5xl font-semibold mt-2 tracking-tight">Explore Music by Taste</h1>
+              <p className="text-white/65 mt-3 max-w-2xl">Discover tracks through genre, mood, and community review momentum.</p>
             </div>
-            <p className="text-gray-400 max-w-xl mx-auto text-xs sm:text-sm md:text-base px-4">
-              Discover new music by genre, explore curated collections, and find your next favorite song
-            </p>
+            <Badge className="rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 px-4 py-2">
+              <Sparkles className="w-4 h-4 mr-2" /> Adaptive Discovery
+            </Badge>
           </div>
 
-          <Tabs defaultValue="genres" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-gray-900 border-gray-800 rounded-2xl text-xs sm:text-base">
-              <TabsTrigger value="genres" className="data-[state=active]:bg-red-600 rounded-xl px-2 py-2 sm:px-4">
-                By Genre
-              </TabsTrigger>
-              <TabsTrigger value="discover" className="data-[state=active]:bg-red-600 rounded-xl px-2 py-2 sm:px-4">
-                Random Discovery
-              </TabsTrigger>
-            </TabsList>
+          <form onSubmit={handleSearch} className="mt-6 grid md:grid-cols-[1fr_auto] gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 text-white/50 absolute left-4 top-1/2 -translate-y-1/2" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search songs, artists, albums"
+                className="pl-11 h-12 rounded-2xl border-white/20 bg-black/40 placeholder:text-white/45"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" className="h-12 rounded-2xl bg-white text-black hover:bg-white/90">Search</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSearchQuery("")}
+                className="h-12 rounded-2xl border-white/20 bg-transparent hover:bg-white/10"
+              >
+                Clear
+              </Button>
+            </div>
+          </form>
 
-            {/* Genres Tab */}
-            <TabsContent value="genres" className="space-y-6 sm:space-y-8">
-              {/* Genre Selection */}
-              <div className="space-y-3 sm:space-y-4">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white">Choose a Genre</h2>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
-                  {MAIN_GENRES.map((genre) => (
-                    <Button
-                      key={genre.id}
-                      variant={selectedGenre === genre.id ? "default" : "outline"}
-                      onClick={() => setSelectedGenre(genre.id)}
-                      className={`rounded-xl sm:rounded-2xl h-auto p-2 sm:p-4 flex flex-col items-center gap-1 sm:gap-2 ${
-                        selectedGenre === genre.id
-                          ? `${genre.color} hover:opacity-90`
-                          : "border-gray-600 text-gray-300 bg-transparent hover:bg-gray-800"
-                      }`}
-                    >
-                      <Music className="w-3 h-3 sm:w-5 sm:h-5" />
-                      <span className="text-xs font-medium">{genre.name}</span>
-                    </Button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {QUICK_SEARCHES.map((term) => (
+              <Button
+                key={term}
+                type="button"
+                variant="outline"
+                onClick={() => setSearchQuery(term)}
+                className="rounded-full border-white/15 bg-black/30 hover:bg-white/10 h-8 px-3 text-xs"
+              >
+                {term}
+              </Button>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 md:p-6 space-y-5">
+          <div className="flex items-center gap-2 text-white/75"><Filter className="w-4 h-4" /> Filters</div>
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs uppercase text-white/45 tracking-[0.16em] mb-2">Genre</p>
+              <Tabs value={genre} onValueChange={setGenre}>
+                <TabsList className="grid grid-cols-2 sm:grid-cols-4 h-auto rounded-2xl bg-black/35 border border-white/10 p-1 gap-1">
+                  {GENRES.map((item) => (
+                    <TabsTrigger key={item} value={item} className="rounded-xl capitalize data-[state=active]:bg-white data-[state=active]:text-black text-xs sm:text-sm">
+                      {item}
+                    </TabsTrigger>
                   ))}
-                </div>
-              </div>
+                </TabsList>
+              </Tabs>
+            </div>
 
-              {/* Genre Tracks */}
-              <div className="space-y-4 sm:space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                  <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white capitalize">
-                    {MAIN_GENRES.find((g) => g.id === selectedGenre)?.name} Music
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => refreshGenre(selectedGenre)}
-                      disabled={genreLoading}
-                      className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800 text-xs sm:text-sm"
-                    >
-                      {genreLoading ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : <Shuffle className="w-3 h-3 sm:w-4 sm:h-4" />}
-                      <span className="ml-1 sm:ml-2">Refresh</span>
-                    </Button>
-                  </div>
-                </div>
-
-                {genreLoading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
-                    {(genreData[selectedGenre] || []).slice(0, 30).map((track) => (
-                      <Card
-                        key={track.id}
-                        className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
-                      >
-                        <CardContent className="p-2 sm:p-3 md:p-4">
-                          <Link href={`/song/${track.id}`}>
-                            <div className="relative aspect-square mb-2 sm:mb-3 md:mb-4 rounded-xl sm:rounded-2xl overflow-hidden">
-                              <Image
-                                src={track.album.images[0]?.url || "/placeholder.svg?height=200&width=200"}
-                                alt={track.name}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                              <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-red-600 rounded-full flex items-center justify-center">
-                                  <Play className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white ml-0.5" />
-                                </div>
-                              </div>
-                            </div>
-                            <div className="space-y-1 md:space-y-2">
-                              <h4 className="font-medium text-xs md:text-sm text-white line-clamp-2">
-                                {track.name.length > 20 ? track.name.substring(0, 20) + "..." : track.name}
-                              </h4>
-                              <p className="text-xs text-gray-400 line-clamp-1">
-                                {track.artists.map((a) => a.name).join(", ").length > 15 ? 
-                                 track.artists.map((a) => a.name).join(", ").substring(0, 15) + "..." : 
-                                 track.artists.map((a) => a.name).join(", ")}
-                              </p>
-                            </div>
-                          </Link>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-
-                {/* Show message if no tracks for genre */}
-                {!genreLoading && (!genreData[selectedGenre] || genreData[selectedGenre].length === 0) && (
-                  <div className="text-center py-12">
-                    <Music className="h-12 w-12 mx-auto mb-4 text-gray-600" />
-                    <p className="text-gray-400">
-                      No tracks found for this genre. Try refreshing or select another genre.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Random Discovery Tab */}
-            <TabsContent value="discover" className="space-y-4 sm:space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                <h2 className="text-base sm:text-lg md:text-2xl font-semibold text-white">Random Discovery</h2>
-                <Button
-                  variant="outline"
-                  onClick={fetchRandomTracks}
-                  className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800 text-xs sm:text-sm"
-                >
-                  <Shuffle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  Shuffle All
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-                {randomTracks.slice(0, 30).map((track, index) => (
-                  <Card
-                    key={track.id}
-                    className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
+            <div>
+              <p className="text-xs uppercase text-white/45 tracking-[0.16em] mb-2">Mood</p>
+              <div className="flex flex-wrap gap-2">
+                {MOODS.map((item) => (
+                  <Button
+                    key={item}
+                    variant="outline"
+                    onClick={() => setMood(item)}
+                    className={`rounded-xl capitalize border-white/15 ${mood === item ? "bg-white text-black" : "bg-black/35 hover:bg-white/10"}`}
                   >
-                    <CardContent className="p-3 sm:p-4">
-                      <Link href={`/song/${track.id}`} className="flex items-center gap-2 sm:gap-4">
-                        <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden flex-shrink-0">
-                          <Image
-                            src={track.album.images[0]?.url || "/placeholder.svg?height=64&width=64"}
-                            alt={track.name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-white truncate group-hover:text-red-400 transition-colors text-xs sm:text-sm md:text-base">
-                            {track.name.length > 25 ? track.name.substring(0, 25) + "..." : track.name}
-                          </h3>
-                          <p className="text-gray-400 truncate text-xs md:text-sm">
-                            {track.artists.map((a) => a.name).join(", ").length > 20 ? 
-                             track.artists.map((a) => a.name).join(", ").substring(0, 20) + "..." : 
-                             track.artists.map((a) => a.name).join(", ")}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate hidden sm:block">
-                            {track.album.name.length > 18 ? track.album.name.substring(0, 18) + "..." : track.album.name}
-                          </p>
-                          <StarRating rating={3.5 + Math.random() * 1.5} readonly size="sm" />
-                        </div>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
-                            <Play className="w-4 h-4 sm:w-5 sm:h-5 text-white ml-0.5" />
-                          </div>
-                        </div>
-                      </Link>
-                    </CardContent>
-                  </Card>
+                    {item}
+                  </Button>
                 ))}
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+            </div>
+
+            <div>
+              <p className="text-xs uppercase text-white/45 tracking-[0.16em] mb-2">Popularity</p>
+              <div className="flex flex-wrap gap-2">
+                {POPULARITY.map((item) => (
+                  <Button
+                    key={item}
+                    variant="outline"
+                    onClick={() => setPopularity(item)}
+                    className={`rounded-xl capitalize border-white/15 ${popularity === item ? "bg-white text-black" : "bg-black/35 hover:bg-white/10"}`}
+                  >
+                    {item}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs uppercase text-white/45 tracking-[0.16em] mb-2">Sort</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSortMode("reviews")}
+                  className={`rounded-xl border-white/15 ${sortMode === "reviews" ? "bg-white text-black" : "bg-black/35 hover:bg-white/10"}`}
+                >
+                  Most Reviewed
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSortMode("rating")}
+                  className={`rounded-xl border-white/15 ${sortMode === "rating" ? "bg-white text-black" : "bg-black/35 hover:bg-white/10"}`}
+                >
+                  Highest Rated
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={resetFilters}
+                  className="rounded-xl border-white/15 bg-black/35 hover:bg-white/10"
+                >
+                  Reset
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-2xl md:text-3xl font-semibold tracking-tight inline-flex items-center gap-2">
+              <Compass className="w-6 h-6 text-sky-300" /> Discovery Grid
+            </h2>
+            <p className="text-white/60 text-sm">{filtered.length} tracks matched</p>
+          </div>
+
+          {loading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 12 }).map((_, idx) => (
+                <div key={idx} className="h-[320px] rounded-3xl border border-white/10 bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {visibleTracks.map((track) => (
+                  <article key={track.id} className="group rounded-3xl overflow-hidden border border-white/10 bg-white/[0.05] hover:bg-white/[0.08] transition-colors">
+                    <Link href={`/song/${track.id}`}>
+                      <div className="relative aspect-[4/5] overflow-hidden">
+                        <Image
+                          src={track.album.images[0]?.url || "/placeholder.svg?height=500&width=500"}
+                          alt={track.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+                        <div className="absolute bottom-0 p-4 w-full">
+                          <p className="text-xl font-semibold line-clamp-1">{track.name}</p>
+                          <p className="text-sm text-white/70 line-clamp-1">{track.artists.map((a) => a.name).join(", ")}</p>
+                          <div className="flex items-center justify-between mt-3">
+                            {track.syntheticRating > 0 ? (
+                              <StarRating rating={track.syntheticRating} readonly size="sm" />
+                            ) : (
+                              <span className="text-white/50 italic text-xs">Not yet rated</span>
+                            )}
+                            <p className="text-xs text-white/65">{track.reviews > 0 ? `${track.reviews} reviews` : "No reviews"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                    <div className="p-4 pt-3 flex gap-2">
+                      <Button className="flex-1 rounded-xl bg-white text-black hover:bg-white/90" asChild>
+                        <Link href={`/song/${track.id}`}>Rate Track</Link>
+                      </Button>
+                      <Button variant="outline" className="rounded-xl border-white/25 bg-transparent hover:bg-white/10" asChild>
+                        <Link href="/write-review"><MessageCircle className="w-4 h-4" /></Link>
+                      </Button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {visibleCount < filtered.length && (
+                <div className="flex justify-center pt-2">
+                  <Button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    variant="outline"
+                    className="rounded-2xl border-white/20 bg-transparent hover:bg-white/10 min-w-40"
+                  >
+                    {loadingMore ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Load More
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
       </div>
     </div>
   )

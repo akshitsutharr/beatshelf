@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getSpotifyToken } from "@/lib/spotify"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const trackId = params.id
+    const { id } = await context.params
+    const trackId = decodeURIComponent(id || "")
 
-    if (!trackId) {
+    if (!trackId || trackId.startsWith("album:")) {
       return NextResponse.json({ error: "Track ID is required" }, { status: 400 })
     }
 

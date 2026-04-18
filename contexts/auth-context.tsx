@@ -1,13 +1,23 @@
 "use client"
 
 import type React from "react"
-
-import { createContext, useContext, useEffect, useState } from "react"
-import type { User } from "@supabase/supabase-js"
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/nextjs"
 import { supabase } from "@/lib/supabase"
+import { clerkIdToDatabaseId } from "@/lib/db-id"
+
+interface AppUser {
+  id: string
+  email?: string
+  created_at?: string
+  user_metadata?: {
+    username?: string
+    avatar_url?: string | null
+  }
+}
 
 interface AuthContextType {
-  user: User | null
+  user: AppUser | null
   profile: any | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<any>
@@ -18,76 +28,91 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const { user: clerkUser, isLoaded } = useUser()
+  const { signOut: clerkSignOut } = useClerk()
+  const { getToken } = useClerkAuth()
+
   const [profile, setProfile] = useState<any | null>(null)
-  const [loading, setLoading] = useState(true)
+  const lastSyncedUserRef = useRef<string | null>(null)
+
+  const user: AppUser | null = useMemo(() => {
+    if (!clerkUser) return null
+    const databaseId = clerkIdToDatabaseId(clerkUser.id)
+    return {
+      id: databaseId,
+      email: clerkUser.primaryEmailAddress?.emailAddress,
+      created_at: clerkUser.createdAt?.toISOString?.(),
+      user_metadata: {
+        username: clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
+        avatar_url: clerkUser.imageUrl,
+      },
+    }
+  }, [clerkUser])
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
+    const syncAndFetch = async () => {
+      if (!user) {
+        setProfile(null)
+        return
       }
-      setLoading(false)
-    })
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      } else {
+      try {
+        if (lastSyncedUserRef.current !== user.id) {
+          const token = await getToken()
+          const response = await fetch("/api/auth/sync-profile", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          })
+
+          if (response.ok) {
+            lastSyncedUserRef.current = user.id
+          }
+        }
+      } catch (error) {
+        console.error("Profile sync failed:", error)
+      }
+
+      try {
+        const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+        setProfile(data || null)
+      } catch (error) {
+        console.error("Profile fetch failed:", error)
         setProfile(null)
       }
-      setLoading(false)
-    })
+    }
 
-    return () => subscription.unsubscribe()
-  }, [])
+    syncAndFetch()
+  }, [user, getToken])
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
-
-      if (error) throw error
-      setProfile(data)
-    } catch (error) {
-      console.error("Error fetching profile:", error)
+  const signIn = async () => {
+    return {
+      data: null,
+      error: {
+        message: "Use /sign-in page for Clerk authentication.",
+      },
     }
   }
 
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    return { data, error }
-  }
-
-  const signUp = async (email: string, password: string, username: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username,
-        },
+  const signUp = async () => {
+    return {
+      data: null,
+      error: {
+        message: "Use /sign-up page for Clerk authentication.",
       },
-    })
-    return { data, error }
+    }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    await clerkSignOut({ redirectUrl: "/" })
   }
 
-  const value = {
+  const value: AuthContextType = {
     user,
     profile,
-    loading,
+    loading: !isLoaded,
     signIn,
     signUp,
     signOut,

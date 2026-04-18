@@ -44,7 +44,7 @@ export default function WriteReviewPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push("/auth/signin")
+      router.push("/sign-in")
       return
     }
 

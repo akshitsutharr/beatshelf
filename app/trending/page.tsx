@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
+import { Flame, MessageCircle, Star, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, Loader2, Play, Clock, Shuffle } from "lucide-react"
-import { StarRating } from "@/components/ui/star-rating"
+import { supabase } from "@/lib/supabase"
 
 interface SpotifyTrack {
   id: string
@@ -17,377 +17,282 @@ interface SpotifyTrack {
   album: {
     name: string
     images: Array<{ url: string }>
-    release_date: string
+    release_date?: string
   }
-  duration_ms: number
-  preview_url: string | null
-  external_urls: { spotify: string }
+}
+
+interface AlbumRelease {
+  id: string
+  name: string
+  artists: Array<{ name: string }>
+  images: Array<{ url: string }>
+  release_date: string
 }
 
 export default function TrendingPage() {
-  const [chartTracks, setChartTracks] = useState<Array<{ track: SpotifyTrack }>>([])
-  const [newReleases, setNewReleases] = useState<SpotifyTrack[]>([])
-  const [viralHits, setViralHits] = useState<SpotifyTrack[]>([])
+  const [tracks, setTracks] = useState<Array<{ track: SpotifyTrack }>>([])
+  const [albums, setAlbums] = useState<AlbumRelease[]>([])
+  const [realReviews, setRealReviews] = useState<Array<{ song_id: string }>>([])
+  const [realRatings, setRealRatings] = useState<Array<{ song_id: string, rating: number }>>([])
+  const [windowFilter, setWindowFilter] = useState("weekly")
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("charts")
 
   useEffect(() => {
-    fetchAllTrendingData()
+    Promise.all([fetchTracks(), fetchAlbums(), fetchCommunityData()]).finally(() => setLoading(false))
   }, [])
 
-  const fetchAllTrendingData = async () => {
-    setLoading(true)
+  const fetchCommunityData = async () => {
     try {
-      // Fetch chart data
-      await fetchChartData()
-      // Fetch new releases
-      await fetchNewReleases()
-      // Fetch viral hits
-      await fetchViralHits()
-    } catch (error) {
-      console.error("Failed to fetch trending data:", error)
-    } finally {
-      setLoading(false)
+      const [{ data: reviewsData }, { data: ratingsData }] = await Promise.all([
+        supabase.from("reviews").select("song_id"),
+        supabase.from("ratings").select("song_id, rating")
+      ])
+      if (reviewsData) setRealReviews(reviewsData)
+      if (ratingsData) setRealRatings(ratingsData)
+    } catch (e) {
+      console.error(e)
     }
   }
 
-  const fetchChartData = async () => {
+  const fetchTracks = async () => {
     try {
-      const response = await fetch("/api/spotify/charts")
-      if (response.ok) {
-        const data = await response.json()
-        if (data.tracks && data.tracks.length > 0) {
-          setChartTracks(data.tracks)
-        } else {
-          // Fallback to random popular songs
-          const fallbackResponse = await fetch("/api/spotify/random-songs?limit=50")
-          if (fallbackResponse.ok) {
-            const fallbackData = await fallbackResponse.json()
-            const formattedTracks = fallbackData.tracks.map((track: SpotifyTrack) => ({ track }))
-            setChartTracks(formattedTracks)
-          }
-        }
-      }
+      const res = await fetch("/api/spotify/charts")
+      if (!res.ok) return
+      const data = await res.json()
+      setTracks(data?.tracks || [])
     } catch (error) {
-      console.error("Error fetching chart data:", error)
+      console.error("Failed to fetch tracks:", error)
     }
   }
 
-  const fetchNewReleases = async () => {
+  const fetchAlbums = async () => {
     try {
-      // Try featured API first
-      const featuredResponse = await fetch("/api/spotify/featured")
-      if (featuredResponse.ok) {
-        const featuredData = await featuredResponse.json()
-        if (featuredData.newReleases?.items?.length > 0) {
-          // Convert albums to tracks format
-          const albumTracks: SpotifyTrack[] = featuredData.newReleases.items.map((album: any) => ({
-            id: album.id,
-            name: album.name,
-            artists: album.artists,
-            album: {
-              name: album.name,
-              images: album.images,
-              release_date: album.release_date,
-            },
-            duration_ms: 180000, // Default 3 minutes
-            preview_url: null,
-            external_urls: { spotify: album.external_urls?.spotify || "" },
-          }))
-          setNewReleases(albumTracks)
-          return
-        }
-      }
-
-      // Fallback: Search for recent music
-      const currentYear = new Date().getFullYear()
-      const searchResponse = await fetch(`/api/spotify/random-songs?genre=pop&limit=30`)
-      if (searchResponse.ok) {
-        const searchData = await searchResponse.json()
-        setNewReleases(searchData.tracks || [])
-      }
+      const res = await fetch("/api/spotify/featured")
+      if (!res.ok) return
+      const data = await res.json()
+      setAlbums(data?.newReleases?.items || [])
     } catch (error) {
-      console.error("Error fetching new releases:", error)
-      // Final fallback
-      const fallbackResponse = await fetch("/api/spotify/random-songs?limit=20")
-      if (fallbackResponse.ok) {
-        const fallbackData = await fallbackResponse.json()
-        setNewReleases(fallbackData.tracks || [])
+      console.error("Failed to fetch albums:", error)
+    }
+  }
+
+  const rankedSongs = useMemo(() => {
+    const songReviews = new Map<string, number>()
+    const songRatings = new Map<string, { sum: number, count: number }>()
+
+    realReviews.forEach(r => {
+      if (r.song_id) songReviews.set(r.song_id, (songReviews.get(r.song_id) || 0) + 1)
+    })
+    realRatings.forEach(r => {
+      if (r.song_id && r.rating) {
+        const existing = songRatings.get(r.song_id) || { sum: 0, count: 0 }
+        songRatings.set(r.song_id, { sum: existing.sum + r.rating, count: existing.count + 1 })
       }
-    }
-  }
+    })
 
-  const fetchViralHits = async () => {
-    try {
-      // Fetch viral/trending songs using multiple genres
-      const viralGenres = ["pop", "hip-hop", "electronic", "rock"]
-      const allViralTracks: SpotifyTrack[] = []
+    return tracks.slice(0, 30).map((item, index) => {
+      const id = item.track.id
+      const reviews = songReviews.get(id) || 0
+      const ratingData = songRatings.get(id)
+      const score = ratingData ? Number((ratingData.sum / ratingData.count).toFixed(1)) : 0
+      const trend = index < 8 ? "up" : index < 16 ? "hold" : "new"
 
-      for (const genre of viralGenres) {
-        try {
-          const response = await fetch(`/api/spotify/random-songs?genre=${genre}&limit=15`)
-          if (response.ok) {
-            const data = await response.json()
-            allViralTracks.push(...(data.tracks || []))
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch viral hits for ${genre}`)
-        }
+      return {
+        id,
+        name: item.track.name,
+        artist: item.track.artists.map((a) => a.name).join(", "),
+        image: item.track.album.images[0]?.url || "/placeholder.svg?height=200&width=200",
+        score,
+        reviews,
+        trend,
       }
+    }).sort((a,b) => (b.score * b.reviews) - (a.score * a.reviews))
+  }, [tracks, realReviews, realRatings])
 
-      // Remove duplicates and shuffle
-      const uniqueViralTracks = allViralTracks
-        .filter((track, index, self) => track && track.id && index === self.findIndex((t) => t && t.id === track.id))
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 30)
+  const rankedArtists = useMemo(() => {
+    const artistScores = new Map<string, { name: string; image: string; reviews: number; scoreSum: number; scoreCount: number }>()
 
-      setViralHits(uniqueViralTracks)
-    } catch (error) {
-      console.error("Error fetching viral hits:", error)
-    }
-  }
+    tracks.slice(0, 45).forEach((item) => {
+      const artistName = item.track.artists[0]?.name
+      if (!artistName) return
 
-  const formatDuration = (ms: number) => {
-    const minutes = Math.floor(ms / 60000)
-    const seconds = Math.floor((ms % 60000) / 1000)
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`
-  }
+      const id = item.track.id
+      const reviewCount = realReviews.filter(r => r.song_id === id).length
+      const ratings = realRatings.filter(r => r.song_id === id)
 
-  const refreshData = async (type: string) => {
-    switch (type) {
-      case "charts":
-        await fetchChartData()
-        break
-      case "new-releases":
-        await fetchNewReleases()
-        break
-      case "viral":
-        await fetchViralHits()
-        break
-      default:
-        await fetchAllTrendingData()
-    }
-  }
+      const prev = artistScores.get(artistName)
+      artistScores.set(artistName, {
+        name: artistName,
+        image: item.track.album.images[0]?.url || "/placeholder.svg?height=320&width=320",
+        reviews: (prev?.reviews || 0) + reviewCount,
+        scoreSum: (prev?.scoreSum || 0) + ratings.reduce((sum, r) => sum + r.rating, 0),
+        scoreCount: (prev?.scoreCount || 0) + ratings.length,
+      })
+    })
+
+    return Array.from(artistScores.values())
+      .map(artist => ({
+        ...artist,
+        points: Math.round(artist.reviews * 10 + (artist.scoreCount > 0 ? (artist.scoreSum / artist.scoreCount) * 20 : 0))
+      }))
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 20)
+      .map((item, index) => ({ ...item, rank: index + 1 }))
+  }, [tracks, realReviews, realRatings])
+
+  const rankedAlbums = useMemo(() => {
+    return albums.slice(0, 20).map((album, index) => {
+      // Mock album ID for relation since it uses 'album:' prefix normally in this app
+      const id = `album:${album.id}`
+      const reviews = realReviews.filter(r => r.song_id === id).length
+      const ratings = realRatings.filter(r => r.song_id === id)
+      const score = ratings.length > 0 ? (ratings.reduce((s, r)=> s + r.rating,0) / ratings.length).toFixed(1) : 0
+
+      return {
+        id: album.id,
+        name: album.name,
+        artist: album.artists.map((a) => a.name).join(", "),
+        image: album.images[0]?.url || "/placeholder.svg?height=320&width=320",
+        score,
+        reviews,
+        rank: index + 1,
+      }
+    })
+  }, [albums, realReviews, realRatings])
 
   return (
-    <div className="min-h-screen bg-black text-white">
-  <div className="container mx-auto px-2 py-4 sm:px-4 sm:py-8">
-  <div className="space-y-6 sm:space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-3 sm:space-y-4">
-            <div className="flex items-center justify-center gap-1 sm:gap-2">
-              <TrendingUp className="h-8 w-8 text-red-600" />
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Trending Now</h1>
+    <div className="min-h-screen bg-[#050608] text-white pb-16">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_5%,rgba(56,189,248,0.2),transparent_34%),radial-gradient(circle_at_90%_28%,rgba(244,63,94,0.16),transparent_34%)]" />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-xl p-7 md:p-10">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-white/50">Curated Leaderboard</p>
+              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mt-2">Trending on Beatshelf</h1>
+              <p className="text-white/65 mt-3 max-w-2xl">
+                Rankings are based on ratings quality and review activity, not play count.
+              </p>
             </div>
-            <p className="text-gray-400 max-w-xl mx-auto text-xs sm:text-sm md:text-base">
-              Discover the hottest tracks and latest releases from around the world
-            </p>
+            <Badge className="bg-red-500/15 text-red-300 border border-red-500/30 px-4 py-2 rounded-full">
+              <Flame className="w-4 h-4 mr-2" /> Fresh Momentum
+            </Badge>
+          </div>
+          <Tabs value={windowFilter} onValueChange={setWindowFilter} className="mt-6">
+            <TabsList className="rounded-2xl bg-black/45 border border-white/10 p-1">
+              <TabsTrigger value="daily" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">Daily</TabsTrigger>
+              <TabsTrigger value="weekly" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">Weekly</TabsTrigger>
+              <TabsTrigger value="all-time" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-black">All-Time</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </section>
+
+        <section className="grid xl:grid-cols-[1.2fr_1fr] gap-6">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5 md:p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-2xl font-semibold">Top Songs</h2>
+              <Button variant="outline" className="rounded-xl border-white/20 bg-transparent hover:bg-white/10" asChild>
+                <Link href="/reviews">Open Reviews</Link>
+              </Button>
+            </div>
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <div key={idx} className="h-20 rounded-2xl bg-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div key={windowFilter} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="space-y-2">
+                  {rankedSongs.map((song, index) => (
+                    <Link
+                      href={`/song/${song.id}`}
+                      key={song.id}
+                      className="grid grid-cols-[48px_56px_1fr_auto] md:grid-cols-[58px_70px_1fr_auto] items-center gap-3 rounded-2xl p-2.5 border border-transparent hover:border-white/15 hover:bg-white/[0.04] transition-colors"
+                    >
+                      <div className="text-center">
+                        <p className="font-semibold text-lg text-white/80">{index + 1}</p>
+                        <p className="text-[10px] uppercase text-white/40 tracking-wide">{song.trend}</p>
+                      </div>
+                      <Image src={song.image} alt={song.name} width={70} height={70} className="rounded-xl object-cover" />
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{song.name}</p>
+                        <p className="text-sm text-white/60 truncate">{song.artist}</p>
+                        <p className="text-xs text-white/45 mt-1">{song.reviews > 0 ? `${song.reviews} active reviews` : "No reviews yet"}</p>
+                      </div>
+                      <div className="text-right">
+                        {song.score > 0 ? (
+                          <>
+                            <p className="text-sm text-yellow-300 inline-flex items-center justify-end gap-1"><Star className="w-4 h-4" /> {song.score.toFixed(1)}</p>
+                            <p className="text-xs text-white/45">review score</p>
+                          </>
+                        ) : (
+                          <div className="flex items-center h-full">
+                            <span className="text-[11px] text-white/40 italic">Not yet rated</span>
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+            )}
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-900 border-gray-800 rounded-2xl text-xs sm:text-base">
-              <TabsTrigger value="charts" className="data-[state=active]:bg-red-600 rounded-xl px-1 py-1 sm:px-2 sm:py-2">
-                Top Charts
-              </TabsTrigger>
-              <TabsTrigger value="new-releases" className="data-[state=active]:bg-red-600 rounded-xl px-1 py-1 sm:px-2 sm:py-2">
-                New Releases
-              </TabsTrigger>
-              <TabsTrigger value="viral" className="data-[state=active]:bg-red-600 rounded-xl px-1 py-1 sm:px-2 sm:py-2">
-                Viral Hits
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="charts" className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white">Global Top 50</h2>
-                <Button
-                  variant="outline"
-                  onClick={() => refreshData("charts")}
-                  className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800"
-                >
-                  <Shuffle className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
+          <div className="space-y-6">
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5">
+              <h3 className="text-xl font-semibold mb-4">Trending Artists</h3>
+              <div className="space-y-2">
+                {rankedArtists.slice(0, 8).map((artist) => (
+                  <div key={artist.name} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-white/[0.05] transition-colors">
+                    <p className="w-5 text-sm text-white/60">{artist.rank}</p>
+                    <Image src={artist.image} alt={artist.name} width={46} height={46} className="rounded-xl object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{artist.name}</p>
+                      <p className="text-xs text-white/50">{artist.reviews > 0 ? `${artist.reviews} review mentions` : "No reviews yet"}</p>
+                    </div>
+                    <p className="text-sm text-sky-300">{artist.points > 0 ? artist.points : "-"}</p>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-                </div>
-              ) : (
-                <div className="space-y-2 sm:space-y-3">
-                  {chartTracks.slice(0, 50).map((item, index) => (
-                    <Card
-                      key={item.track.id}
-                      className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 rounded-2xl backdrop-blur-sm"
-                    >
-                      <CardContent className="p-2 sm:p-4">
-                        <Link href={`/song/${item.track.id}`} className="flex items-center gap-2 sm:gap-4 group">
-                          <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center bg-gray-800 rounded-xl flex-shrink-0">
-                            <span className="text-sm sm:text-xl font-bold text-gray-400 group-hover:text-red-600 transition-colors">
-                              {index + 1}
-                            </span>
-                          </div>
-                          <div className="relative w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden flex-shrink-0">
-                            <Image
-                              src={item.track.album.images[0]?.url || "/placeholder.svg?height=64&width=64"}
-                              alt={item.track.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="w-4 h-4 sm:w-8 sm:h-8 bg-red-600 rounded-full flex items-center justify-center">
-                                <Play className="w-2 h-2 sm:w-4 sm:h-4 text-white ml-0.5" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-white truncate group-hover:text-red-400 transition-colors text-xs sm:text-sm">
-                              {item.track.name}
-                            </h3>
-                            <p className="text-gray-400 truncate text-xs">{item.track.artists.map((a) => a.name).join(", ")}</p>
-                            <p className="text-gray-500 truncate text-xs hidden sm:block">{item.track.album.name}</p>
-                          </div>
-                          <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
-                            <StarRating rating={4.0 + Math.random() * 1} readonly size="sm" />
-                            <div className="hidden sm:flex items-center gap-1 text-gray-500 text-sm">
-                              <Clock className="w-4 h-4" />
-                              <span>{formatDuration(item.track.duration_ms)}</span>
-                            </div>
-                            {index < 3 && (
-                              <Badge className="bg-red-600 text-white rounded-full px-1 sm:px-3 text-xs hidden sm:inline-flex">
-                                {index === 0 ? "🔥" : index === 1 ? "⭐" : "🚀"}
-                              </Badge>
-                            )}
-                          </div>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="new-releases" className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                <h2 className="text-xl md:text-2xl font-semibold text-white">Latest Releases</h2>
-                <Button
-                  variant="outline"
-                  onClick={() => refreshData("new-releases")}
-                  className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800"
-                >
-                  <Shuffle className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-5">
+              <h3 className="text-xl font-semibold mb-4">Top Albums</h3>
+              <div className="space-y-2">
+                {rankedAlbums.slice(0, 8).map((album) => (
+                  <Link key={album.id} href={`/album/${album.id}`} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-white/[0.05] transition-colors">
+                    <p className="w-5 text-sm text-white/60">{album.rank}</p>
+                    <Image src={album.image} alt={album.name} width={46} height={46} className="rounded-xl object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{album.name}</p>
+                      <p className="text-xs text-white/50 truncate">{album.artist}</p>
+                    </div>
+                    {Number(album.score) > 0 ? (
+                      <p className="text-sm text-yellow-300">{album.score}</p>
+                    ) : (
+                      <p className="text-[11px] text-white/40 italic">Not yet rated</p>
+                    )}
+                  </Link>
+                ))}
               </div>
+              <Button className="w-full mt-4 rounded-xl bg-white text-black hover:bg-white/90" asChild>
+                <Link href="/albums"><MessageCircle className="w-4 h-4 mr-2" />Review Albums</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
 
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 md:gap-6">
-                  {newReleases.map((track) => (
-                    <Card
-                      key={track.id}
-                      className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
-                    >
-                      <CardContent className="p-2 sm:p-3 md:p-4">
-                        <Link href={`/song/${track.id}`}>
-                          <div className="relative aspect-square mb-2 sm:mb-3 md:mb-4 rounded-xl sm:rounded-2xl overflow-hidden">
-                            <Image
-                              src={track.album.images[0]?.url || "/placeholder.svg?height=200&width=200"}
-                              alt={track.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                            <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                size="icon"
-                                className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-red-600 hover:bg-red-700 rounded-full"
-                              >
-                                <Play className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ml-0.5" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="space-y-1 md:space-y-2">
-                            <h3 className="font-medium text-white line-clamp-2 text-xs sm:text-sm">{track.name.length > 20 ? track.name.substring(0, 20) + "..." : track.name}</h3>
-                            <p className="text-gray-400 line-clamp-1 text-xs">
-                              {track.artists.map((a) => a.name).join(", ").length > 15 ? track.artists.map((a) => a.name).join(", ").substring(0, 15) + "..." : track.artists.map((a) => a.name).join(", ")}
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <Badge variant="secondary" className="bg-red-600/20 text-red-400 text-xs rounded-full px-1 sm:px-2">
-                                New
-                              </Badge>
-                            </div>
-                          </div>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="viral" className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-xl md:text-2xl font-semibold text-white">Viral Hits</h2>
-                <Button
-                  variant="outline"
-                  onClick={() => refreshData("viral")}
-                  className="border-gray-600 text-gray-300 bg-transparent rounded-xl hover:bg-gray-800"
-                >
-                  <Shuffle className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
-              </div>
-
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-                  {viralHits.map((track, index) => (
-                    <Card
-                      key={track.id}
-                      className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
-                    >
-                      <CardContent className="p-3 sm:p-4 md:p-6">
-                        <Link href={`/song/${track.id}`} className="flex items-center gap-2 sm:gap-4">
-                          <div className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl overflow-hidden flex-shrink-0">
-                            <Image
-                              src={track.album.images[0]?.url || "/placeholder.svg?height=80&width=80"}
-                              alt={track.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-white truncate text-xs sm:text-sm md:text-base">
-                              {track.name.length > 25 ? track.name.substring(0, 25) + "..." : track.name}
-                            </h3>
-                            <p className="text-gray-400 truncate text-xs md:text-sm">
-                              {track.artists.map((a) => a.name).join(", ").length > 20 ? track.artists.map((a) => a.name).join(", ").substring(0, 20) + "..." : track.artists.map((a) => a.name).join(", ")}
-                            </p>
-                            <div className="flex items-center gap-1 sm:gap-2 mt-1 sm:mt-2 flex-wrap">
-                              <StarRating rating={3.8 + Math.random() * 1.2} readonly size="sm" />
-                              <Badge className="bg-red-600/20 text-red-400 rounded-full text-xs px-1 sm:px-2">
-                                {index < 10 ? "🔥" : "📈"}
-                              </Badge>
-                            </div>
-                          </div>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#131a2a]/80 to-[#1c1320]/80 p-6 md:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-2xl font-semibold">How leaderboard scoring works</h3>
+              <p className="text-white/65 mt-2">Weighted by average rating quality, review depth, and fresh community engagement.</p>
+            </div>
+            <Button variant="outline" className="rounded-xl border-white/25 bg-transparent hover:bg-white/10" asChild>
+              <Link href="/reviews"><TrendingUp className="w-4 h-4 mr-2" />Join Discussion</Link>
+            </Button>
+          </div>
+        </section>
       </div>
     </div>
   )

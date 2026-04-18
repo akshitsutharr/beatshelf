@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StarRating } from "@/components/ui/star-rating"
@@ -20,6 +21,8 @@ import {
   Loader2,
   Share,
   Download,
+  Sparkles,
+  Flame,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
@@ -61,6 +64,13 @@ interface Review {
   user_liked: boolean
 }
 
+interface RelatedTrack {
+  id: string
+  name: string
+  artistName: string
+  image: string
+}
+
 export default function SongDetailPage() {
   const params = useParams()
   const songId = params.id as string
@@ -77,6 +87,8 @@ export default function SongDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [showCardGenerator, setShowCardGenerator] = useState(false)
   const [selectedReviewData, setSelectedReviewData] = useState<any>(null)
+  const [relatedTracks, setRelatedTracks] = useState<RelatedTrack[]>([])
+  const [reviewSort, setReviewSort] = useState<"latest" | "highest" | "helpful">("latest")
 
   useEffect(() => {
     if (songId) {
@@ -88,15 +100,20 @@ export default function SongDetailPage() {
     }
   }, [songId, user])
 
+  useEffect(() => {
+    if (!song?.artist_name) return
+    fetchRelatedTracks(song.artist_name)
+  }, [song?.artist_name, songId])
+
   const fetchSongDetails = async () => {
     try {
       // First try to get from our database
       const { data: dbSong, error: dbError } = await supabase
         .rpc("get_song_with_stats", { song_id_param: songId })
-        .single()
+        .maybeSingle()
 
       if (dbSong) {
-        setSong(dbSong)
+        setSong(dbSong as unknown as Song)
       } else {
         // If not in database, fetch from Spotify via our API route
         try {
@@ -131,8 +148,20 @@ export default function SongDetailPage() {
             explicit: spotifyTrack.explicit,
           }
 
+          const cacheSong = {
+            id: spotifyTrack.id,
+            name: spotifyTrack.name,
+            artist_name: spotifyTrack.artists.map((a: any) => a.name).join(", "),
+            album_name: spotifyTrack.album.name,
+            album_image_url: spotifyTrack.album.images[0]?.url,
+            preview_url: spotifyTrack.preview_url,
+            duration_ms: spotifyTrack.duration_ms,
+            release_date: spotifyTrack.album.release_date,
+            spotify_url: spotifyTrack.external_urls.spotify,
+          }
+
           // Cache in database
-          const { error: insertError } = await supabase.from("songs").upsert(formattedSong)
+          const { error: insertError } = await supabase.from("songs").upsert(cacheSong)
           if (insertError) {
             console.warn("Failed to cache song in database:", insertError)
           }
@@ -186,7 +215,7 @@ export default function SongDetailPage() {
               .select("rating")
               .eq("song_id", songId)
               .eq("user_id", review.user_id)
-              .single()
+              .maybeSingle()
 
             // Get likes count
             const { count: likesCount } = await supabase
@@ -202,17 +231,18 @@ export default function SongDetailPage() {
                 .select("id")
                 .eq("review_id", review.id)
                 .eq("user_id", user.id)
-                .single()
+                .maybeSingle()
 
               userLiked = !!userLikeData
             }
 
             return {
               ...review,
+              profiles: Array.isArray(review.profiles) ? review.profiles[0] : review.profiles,
               ratings: ratingData,
               likes_count: likesCount || 0,
               user_liked: userLiked,
-            }
+            } as Review
           }),
         )
 
@@ -233,7 +263,7 @@ export default function SongDetailPage() {
         .select("rating")
         .eq("user_id", user.id)
         .eq("song_id", songId)
-        .single()
+        .maybeSingle()
 
       if (rating) {
         setUserRating(rating.rating)
@@ -245,7 +275,7 @@ export default function SongDetailPage() {
         .select("content")
         .eq("user_id", user.id)
         .eq("song_id", songId)
-        .single()
+        .maybeSingle()
 
       if (review) {
         setUserReview(review.content)
@@ -257,13 +287,44 @@ export default function SongDetailPage() {
         .select("id")
         .eq("user_id", user.id)
         .eq("song_id", songId)
-        .single()
+        .maybeSingle()
 
       setIsFavorited(!!favorite)
     } catch (error) {
       // Errors are expected when no data exists
     }
   }
+
+  const fetchRelatedTracks = async (artistName: string) => {
+    try {
+      const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(artistName)}&limit=12`)
+      if (!response.ok) return
+      const data = await response.json()
+      const tracks = (data?.tracks?.items || [])
+        .filter((track: any) => track.id && track.id !== songId)
+        .slice(0, 8)
+        .map((track: any) => ({
+          id: track.id,
+          name: track.name,
+          artistName: track.artists?.map((artist: any) => artist.name).join(", ") || "Unknown",
+          image: track.album?.images?.[0]?.url || "/placeholder.svg?height=140&width=140",
+        }))
+      setRelatedTracks(tracks)
+    } catch (error) {
+      console.error("Related tracks fetch failed:", error)
+    }
+  }
+
+  const sortedReviews = useMemo(() => {
+    const next = [...reviews]
+    if (reviewSort === "highest") {
+      return next.sort((a, b) => (b.ratings?.rating || 0) - (a.ratings?.rating || 0))
+    }
+    if (reviewSort === "helpful") {
+      return next.sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
+    }
+    return next.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+  }, [reviews, reviewSort])
 
   const handleRatingChange = async (rating: number) => {
     if (!user) {
@@ -319,29 +380,36 @@ export default function SongDetailPage() {
 
     setSubmitting(true)
     try {
-      // Ensure song exists in database first
-      if (song) {
-        await supabase.from("songs").upsert({
-          id: song.id,
-          name: song.name,
-          artist_name: song.artist_name,
-          album_name: song.album_name,
-          album_image_url: song.album_image_url,
-          preview_url: song.preview_url,
-          duration_ms: song.duration_ms,
-          release_date: song.release_date,
-          spotify_url: song.spotify_url,
-        })
-      }
-
-      // Insert/update review
-      const { error: reviewError } = await supabase.from("reviews").upsert({
-        user_id: user.id,
-        song_id: songId,
-        content: userReview.trim(),
+      const response = await fetch("/api/reviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          songId,
+          song: song
+            ? {
+                id: song.id,
+                name: song.name,
+                artist_name: song.artist_name,
+                album_name: song.album_name,
+                album_image_url: song.album_image_url,
+                preview_url: song.preview_url,
+                duration_ms: song.duration_ms,
+                release_date: song.release_date,
+                spotify_url: song.spotify_url,
+              }
+            : undefined,
+          content: userReview.trim(),
+          rating: userRating,
+        }),
       })
 
-      if (reviewError) throw reviewError
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        console.error("Review API error payload:", payload)
+        throw new Error(payload?.error || `Failed to save review (${response.status})`)
+      }
 
       toast({
         title: "Review published!",
@@ -354,7 +422,7 @@ export default function SongDetailPage() {
       console.error("Review submission error:", error)
       toast({
         title: "Error",
-        description: "Failed to save review",
+        description: error instanceof Error ? error.message : "Failed to save review",
         variant: "destructive",
       })
     } finally {
@@ -468,6 +536,7 @@ export default function SongDetailPage() {
         reviewContent: reviewData.content,
         rating: reviewData.rating || 0,
         reviewDate: reviewData.created_at,
+        mediaType: "song",
       }
     } else {
       // Generate card for current user's review
@@ -489,6 +558,7 @@ export default function SongDetailPage() {
         reviewContent: userReview,
         rating: userRating,
         reviewDate: new Date().toISOString(),
+        mediaType: "song",
       }
     }
 
@@ -536,12 +606,13 @@ export default function SongDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Song Header */}
+    <div className="relative min-h-screen bg-[#050608] text-white pb-16">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_5%,rgba(56,189,248,0.14),transparent_36%),radial-gradient(circle_at_85%_28%,rgba(244,63,94,0.14),transparent_32%)]" />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 md:p-7">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-80">
-            <div className="relative aspect-square rounded-3xl overflow-hidden group">
+            <div className="relative aspect-square rounded-3xl overflow-hidden group border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.35)]">
               <Image
                 src={song.album_image_url || "/placeholder.svg?height=400&width=400&query=music album cover"}
                 alt={`${song.album_name} cover`}
@@ -589,6 +660,11 @@ export default function SongDetailPage() {
                   Explicit
                 </Badge>
               )}
+              {song.popularity ? (
+                <Badge className="rounded-full bg-white/10 border border-white/20 text-white">
+                  <Flame className="h-3 w-3 mr-1" /> Popularity {song.popularity}
+                </Badge>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-4">
@@ -605,10 +681,13 @@ export default function SongDetailPage() {
               </Badge>
             </div>
 
-            <div className="flex flex-wrap gap-4">
-              <Button onClick={toggleFavorite} variant={isFavorited ? "default" : "outline"} className="rounded-xl">
-                <Heart className={`h-4 w-4 mr-2 ${isFavorited ? "fill-current text-red-500" : "text-red-500"}`} />
-                <span className="text-red-500">{isFavorited ? "Favorited" : "Add to Favorites"}</span>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={toggleFavorite}
+                className={`rounded-xl ${isFavorited ? "bg-red-500 text-white hover:bg-red-400" : "bg-white text-black hover:bg-white/90"}`}
+              >
+                <Heart className={`h-4 w-4 mr-2 ${isFavorited ? "fill-current" : ""}`} />
+                <span>{isFavorited ? "Favorited" : "Add to Favorites"}</span>
               </Button>
 
               {song.spotify_url && (
@@ -621,10 +700,7 @@ export default function SongDetailPage() {
               )}
 
               {user && userReview.trim() && userRating > 0 && (
-                <Button
-                  onClick={() => handleGenerateCard()}
-                  className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                >
+                <Button onClick={() => handleGenerateCard()} className="rounded-xl bg-sky-500 hover:bg-sky-400 text-black font-semibold">
                   <Share className="h-4 w-4 mr-2" />
                   Generate Card
                 </Button>
@@ -632,22 +708,50 @@ export default function SongDetailPage() {
             </div>
           </div>
         </div>
+        </section>
+
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="bg-white/[0.05] border-white/10 rounded-2xl">
+            <CardContent className="p-4">
+              <p className="text-xs text-white/55 uppercase tracking-[0.14em]">Average Rating</p>
+              <p className="text-2xl font-semibold mt-1">{song.avg_rating?.toFixed(1) || "0.0"}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/[0.05] border-white/10 rounded-2xl">
+            <CardContent className="p-4">
+              <p className="text-xs text-white/55 uppercase tracking-[0.14em]">Ratings</p>
+              <p className="text-2xl font-semibold mt-1">{song.total_ratings || 0}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/[0.05] border-white/10 rounded-2xl">
+            <CardContent className="p-4">
+              <p className="text-xs text-white/55 uppercase tracking-[0.14em]">Reviews</p>
+              <p className="text-2xl font-semibold mt-1">{song.total_reviews || 0}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/[0.05] border-white/10 rounded-2xl">
+            <CardContent className="p-4">
+              <p className="text-xs text-white/55 uppercase tracking-[0.14em]">Favorites</p>
+              <p className="text-2xl font-semibold mt-1">{song.total_favorites || 0}</p>
+            </CardContent>
+          </Card>
+        </section>
 
         {/* Rating Section */}
         {user && (
-          <Card className="bg-gray-900/50 border-gray-800 rounded-3xl backdrop-blur-sm">
+          <Card className="bg-white/[0.05] border-white/10 rounded-3xl backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white">Rate this song</CardTitle>
             </CardHeader>
             <CardContent>
-              <StarRating rating={userRating} onRatingChange={handleRatingChange} size="lg" maxStars={5} />
+              <StarRating rating={userRating} onRatingChange={handleRatingChange} size="lg" />
             </CardContent>
           </Card>
         )}
 
         {/* Review Section */}
         {user && (
-          <Card className="bg-gray-900/50 border-gray-800 rounded-3xl backdrop-blur-sm">
+          <Card className="bg-white/[0.05] border-white/10 rounded-3xl backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white">Write a review</CardTitle>
             </CardHeader>
@@ -661,12 +765,12 @@ export default function SongDetailPage() {
                 <Button
                   onClick={handleReviewSubmit}
                   disabled={!userReview.trim() || submitting}
-                  className="bg-red-600 hover:bg-red-700 rounded-xl"
+                  className="bg-red-500 hover:bg-red-400 rounded-xl text-white"
                 >
                   {submitting ? "Publishing..." : "Publish Review"}
                 </Button>
                 {userReview.trim() && userRating > 0 && (
-                  <Button onClick={() => handleGenerateCard()} variant="outline" className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                  <Button onClick={() => handleGenerateCard()} variant="outline" className="rounded-xl border-white/25 bg-transparent hover:bg-white/10 text-white">
                     <Download className="h-4 w-4 mr-2" />
                     Generate Card
                   </Button>
@@ -678,10 +782,23 @@ export default function SongDetailPage() {
 
         {/* Reviews List */}
         <div className="space-y-6">
-          <h2 className="text-xl sm:text-2xl font-bold">Reviews ({reviews.length})</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold">Reviews ({reviews.length})</h2>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setReviewSort("latest")} className={`rounded-xl border-white/25 ${reviewSort === "latest" ? "bg-white text-black" : "bg-transparent hover:bg-white/10"}`}>
+                Latest
+              </Button>
+              <Button variant="outline" onClick={() => setReviewSort("highest")} className={`rounded-xl border-white/25 ${reviewSort === "highest" ? "bg-white text-black" : "bg-transparent hover:bg-white/10"}`}>
+                Highest
+              </Button>
+              <Button variant="outline" onClick={() => setReviewSort("helpful")} className={`rounded-xl border-white/25 ${reviewSort === "helpful" ? "bg-white text-black" : "bg-transparent hover:bg-white/10"}`}>
+                Helpful
+              </Button>
+            </div>
+          </div>
 
           {reviews.length === 0 ? (
-            <Card className="bg-gray-900/50 border-gray-800 rounded-3xl backdrop-blur-sm">
+            <Card className="bg-white/[0.05] border-white/10 rounded-3xl backdrop-blur-sm">
               <CardContent className="py-12 text-center text-gray-400">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No reviews yet. Be the first to share your thoughts!</p>
@@ -689,10 +806,10 @@ export default function SongDetailPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {reviews.map((review) => (
+              {sortedReviews.map((review) => (
                 <Card
                   key={review.id}
-                  className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 rounded-3xl backdrop-blur-sm"
+                  className="bg-white/[0.05] border-white/10 hover:bg-white/[0.08] transition-all duration-300 rounded-3xl backdrop-blur-sm"
                 >
                   <CardContent className="pt-6">
                     <div className="flex gap-4">
@@ -760,6 +877,28 @@ export default function SongDetailPage() {
             </div>
           )}
         </div>
+
+        {relatedTracks.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="text-xl sm:text-2xl font-bold inline-flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-sky-300" /> More From This Artist
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3">
+              {relatedTracks.map((track) => (
+                <Link key={track.id} href={`/song/${track.id}`} className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] transition-colors">
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    <Image src={track.image} alt={track.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-3">
+                      <p className="text-sm font-semibold line-clamp-1">{track.name}</p>
+                      <p className="text-xs text-white/65 line-clamp-1 mt-1">{track.artistName}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Review Card Generator Modal */}

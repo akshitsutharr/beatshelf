@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Bold, Italic, Underline, List, ListOrdered, Quote } from "lucide-react"
@@ -11,6 +11,18 @@ interface RichTextEditorProps {
   onChange: (value: string) => void
   placeholder?: string
   className?: string
+}
+
+export const renderReviewContent = (text: string) => {
+  if (!text) return ""
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/<u>(.*?)<\/u>/g, "<u>$1</u>")
+    .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-primary pl-4 italic">$1</blockquote>')
+    .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/^(\d+)\. (.+)$/gm, "<li>$1. $2</li>")
+    .replace(/\n/g, "<br>")
 }
 
 export function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
@@ -58,16 +70,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
     }
   }
 
-  const renderPreview = (text: string) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/<u>(.*?)<\/u>/g, "<u>$1</u>")
-      .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-primary pl-4 italic">$1</blockquote>')
-      .replace(/^- (.+)$/gm, "<li>$1</li>")
-      .replace(/^(\d+)\. (.+)$/gm, "<li>$1. $2</li>")
-      .replace(/\n/g, "<br>")
-  }
+  const previewHtml = useMemo(() => renderReviewContent(value || ""), [value])
 
   return (
     <div className={cn("border rounded-lg overflow-hidden", className)}>
@@ -102,14 +105,17 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
       {/* Editor/Preview */}
       <div className="min-h-[200px]">
         {isPreview ? (
-          <div className="p-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderPreview(value) }} />
+          <div
+            className="min-h-[200px] p-4 prose prose-invert prose-sm max-w-none prose-p:text-white/85 prose-strong:text-white prose-em:text-white/75 prose-blockquote:text-white/70 prose-li:text-white/80 bg-black/30 rounded-b-lg text-white"
+            dangerouslySetInnerHTML={{ __html: previewHtml }}
+          />
         ) : (
           <Textarea
             ref={textareaRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className="min-h-[200px] border-0 resize-none focus-visible:ring-0 rounded-none"
+            className="min-h-[200px] border-0 resize-none focus-visible:ring-0 rounded-none bg-black/30 text-white placeholder:text-white/35"
           />
         )}
       </div>

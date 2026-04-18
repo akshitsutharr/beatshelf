@@ -129,18 +129,29 @@ export default function ProfilePage() {
 
       // Add ratings to reviews
       const reviewsWithRatings: UserReview[] = []
-      if (reviewsData) {
-        for (const review of reviewsData) {
-          const userRating = ratingsData?.find((r) => r.songs.id === review.songs.id)
+      
+      const formattedReviewsData = reviewsData?.map((r: any) => ({
+        ...r,
+        songs: Array.isArray(r.songs) ? r.songs[0] : r.songs
+      }))
+
+      const formattedRatingsData = ratingsData?.map((r: any) => ({
+        ...r,
+        songs: Array.isArray(r.songs) ? r.songs[0] : r.songs
+      }))
+
+      if (formattedReviewsData) {
+        for (const review of formattedReviewsData) {
+          const userRating = formattedRatingsData?.find((r) => r.songs?.id === review.songs?.id)
           reviewsWithRatings.push({
             ...review,
             ratings: userRating ? { rating: userRating.rating } : undefined,
-          })
+          } as UserReview)
         }
       }
 
       setReviews(reviewsWithRatings)
-      setRatings(ratingsData || [])
+      setRatings((formattedRatingsData || []) as UserRating[])
 
       // Calculate stats
       const totalReviews = reviewsData?.length || 0

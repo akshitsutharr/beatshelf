@@ -71,9 +71,46 @@ export interface SpotifyTrack {
   }
 }
 
+export interface SpotifyArtist {
+  id: string
+  name: string
+  images: Array<{ url: string; height: number | null; width: number | null }>
+  genres: string[]
+  popularity: number
+  followers?: { total: number }
+  external_urls: {
+    spotify: string
+  }
+}
+
+export interface SpotifyAlbum {
+  id: string
+  name: string
+  album_type: string
+  release_date: string
+  total_tracks: number
+  images: Array<{ url: string; height: number; width: number }>
+  artists: Array<{ id: string; name: string }>
+  external_urls: {
+    spotify: string
+  }
+}
+
 export interface SpotifySearchResponse {
   tracks: {
     items: SpotifyTrack[]
+    total: number
+    limit: number
+    offset: number
+  }
+  albums?: {
+    items: SpotifyAlbum[]
+    total: number
+    limit: number
+    offset: number
+  }
+  artists?: {
+    items: SpotifyArtist[]
     total: number
     limit: number
     offset: number
@@ -94,6 +131,25 @@ export async function searchTracks(query: string, limit = 20, offset = 0): Promi
 
   if (!response.ok) {
     throw new Error("Failed to search tracks")
+  }
+
+  return response.json()
+}
+
+export async function searchMusic(query: string, limit = 20, offset = 0): Promise<SpotifySearchResponse> {
+  const token = await getSpotifyToken()
+
+  const response = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track,album,artist&limit=${limit}&offset=${offset}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to search music")
   }
 
   return response.json()
@@ -130,6 +186,100 @@ export async function getTrack(trackId: string): Promise<SpotifyTrack> {
   }
 
   return response.json()
+}
+
+export async function getFeaturedArtists(limit = 30): Promise<SpotifyArtist[]> {
+  const token = await getSpotifyToken()
+  const seedQueries = ["genre:pop", "genre:hip-hop", "genre:r-n-b", "genre:indie", "genre:electronic"]
+
+  const responses = await Promise.all(
+    seedQueries.map((query) =>
+      fetch(
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=artist&limit=${Math.max(10, Math.ceil(limit / seedQueries.length))}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      ),
+    ),
+  )
+
+  const payloads = await Promise.all(
+    responses.map(async (response) => {
+      if (!response.ok) return null
+      return response.json()
+    }),
+  )
+
+  const unique = new Map<string, SpotifyArtist>()
+  for (const payload of payloads) {
+    const artists = payload?.artists?.items || []
+    for (const artist of artists) {
+      if (!unique.has(artist.id)) {
+        unique.set(artist.id, artist)
+      }
+    }
+  }
+
+  return Array.from(unique.values())
+    .sort((a, b) => b.popularity - a.popularity)
+    .slice(0, limit)
+}
+
+export async function getArtistsByIds(ids: string[]): Promise<SpotifyArtist[]> {
+  const uniqueIds = Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean))).slice(0, 50)
+  if (uniqueIds.length === 0) return []
+
+  const token = await getSpotifyToken()
+  const response = await fetch(`https://api.spotify.com/v1/artists?ids=${encodeURIComponent(uniqueIds.join(","))}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to get artists by IDs")
+  }
+
+  const data = await response.json()
+  return Array.isArray(data?.artists) ? data.artists : []
+}
+
+export async function getArtistProfile(artistId: string): Promise<{
+  artist: SpotifyArtist
+  topTracks: SpotifyTrack[]
+  albums: SpotifyAlbum[]
+}> {
+  const token = await getSpotifyToken()
+
+  const [artistRes, topTracksRes, albumsRes] = await Promise.all([
+    fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    fetch(`https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single&market=US&limit=50`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  ])
+
+  if (!artistRes.ok || !topTracksRes.ok || !albumsRes.ok) {
+    throw new Error("Failed to fetch artist profile")
+  }
+
+  const artist = (await artistRes.json()) as SpotifyArtist
+  const topTracksData = (await topTracksRes.json()) as { tracks: SpotifyTrack[] }
+  const albumsData = (await albumsRes.json()) as { items: SpotifyAlbum[] }
+
+  const dedupedAlbums = Array.from(new Map(albumsData.items.map((album) => [album.id, album])).values())
+
+  return {
+    artist,
+    topTracks: topTracksData.tracks || [],
+    albums: dedupedAlbums,
+  }
 }
 
 export function formatSpotifyTrackForDB(track: SpotifyTrack) {

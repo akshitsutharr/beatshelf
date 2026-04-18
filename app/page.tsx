@@ -1,413 +1,513 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
+import { motion } from "framer-motion"
+import { ChevronRight, Disc3, MessageCircle, Mic2, Star, TrendingUp, UserRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { renderReviewContent } from "@/components/ui/rich-text-editor"
 import { Badge } from "@/components/ui/badge"
-import { Play, TrendingUp, Music, Clock, Users, Star, Sparkles, Heart } from "lucide-react"
 import { StarRating } from "@/components/ui/star-rating"
+import { supabase } from "@/lib/supabase"
 
 interface SpotifyTrack {
   id: string
   name: string
-  artists: Array<{ name: string }>
+  artists: Array<{ id?: string; name: string }>
   album: {
     name: string
     images: Array<{ url: string }>
-    release_date: string
   }
-  duration_ms: number
-  preview_url: string | null
-  external_urls: { spotify: string }
 }
 
-interface FeaturedData {
-  featured: {
-    items: Array<{
-      id: string
-      name: string
-      description: string
-      images: Array<{ url: string }>
-    }>
+interface NewReleaseAlbum {
+  id: string
+  name: string
+  artists: Array<{ name: string }>
+  images: Array<{ url: string }>
+  release_date: string
+}
+
+interface RealReview {
+  id: string
+  content: string
+  created_at: string
+  song_id?: string
+  profiles?: {
+    username: string
+    avatar_url: string | null
   }
-  newReleases: {
-    items: Array<{
-      id: string
-      name: string
-      artists: Array<{ name: string }>
-      images: Array<{ url: string }>
-      release_date: string
-    }>
+  songs?: {
+    id?: string
+    name: string
+    album_name?: string
+    artist_name: string
+    album_image_url: string | null
   }
-  topTracks: Array<{
-    track: SpotifyTrack
-  }>
+  ratings?: {
+    rating: number
+  }
+}
+
+function ScrollSection({ title, subtitle, href, children }: { title: string; subtitle: string; href: string; children: React.ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const handleWheel = (e: WheelEvent) => {
+      // Allow browser to handle shift+scroll naturally
+      if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+      
+      const { scrollLeft, scrollWidth, clientWidth } = el
+      const maxScroll = scrollWidth - clientWidth
+      const atStart = scrollLeft <= 0 && e.deltaY < 0
+      const atEnd = scrollLeft >= maxScroll && e.deltaY > 0
+      
+      if (atStart || atEnd) return
+
+      e.preventDefault()
+      el.scrollBy({ left: e.deltaY * 0.8, behavior: "auto" })
+    }
+    
+    el.addEventListener("wheel", handleWheel, { passive: false })
+    return () => el.removeEventListener("wheel", handleWheel)
+  }, [])
+
+  return (
+    <section className="space-y-4 max-w-[100vw] overflow-hidden">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-white">{title}</h2>
+          <p className="text-white/55 text-sm mt-1">{subtitle}</p>
+        </div>
+        <Link href={href} className="text-sm text-white/70 hover:text-white inline-flex items-center">
+          See all <ChevronRight className="w-4 h-4" />
+        </Link>
+      </div>
+      <div className="relative group">
+        <div 
+          ref={scrollRef}
+          className="flex gap-5 overflow-x-auto pb-4 pt-2 snap-x snap-mandatory rounded-2xl touch-pan-x"
+        >
+          {children}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function SkeletonCard() {
+  return <div className="min-w-[280px] h-[360px] rounded-3xl bg-white/5 animate-pulse border border-white/10 snap-start" />
 }
 
 export default function HomePage() {
-  const [featuredData, setFeaturedData] = useState<FeaturedData | null>(null)
+  const [newReleases, setNewReleases] = useState<NewReleaseAlbum[]>([])
   const [chartTracks, setChartTracks] = useState<Array<{ track: SpotifyTrack }>>([])
+  const [realReviews, setRealReviews] = useState<RealReview[]>([])
+  const [artistImages, setArtistImages] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchFeaturedData()
-    fetchChartData()
+    Promise.all([fetchSpotifyData(), fetchCommunityReviews()]).finally(() => setLoading(false))
   }, [])
 
-  const fetchFeaturedData = async () => {
+  useEffect(() => {
+    const loadArtistImages = async () => {
+      const artistIds = Array.from(
+        new Set(
+          chartTracks
+            .map((item) => item.track.artists[0]?.id)
+            .filter((id): id is string => Boolean(id))
+            .slice(0, 24),
+        ),
+      )
+
+      if (artistIds.length === 0) {
+        setArtistImages({})
+        return
+      }
+
+      try {
+        const params = new URLSearchParams({ ids: artistIds.join(",") })
+        const response = await fetch(`/api/spotify/artists?${params.toString()}`, { cache: "no-store" })
+        if (!response.ok) return
+
+        const payload = await response.json()
+        const imageMap: Record<string, string> = {}
+
+        if (Array.isArray(payload.items)) {
+          payload.items.forEach((artist: any) => {
+            if (artist?.id && artist?.images?.[0]?.url) {
+              imageMap[artist.id] = artist.images[0].url
+            }
+          })
+        }
+
+        setArtistImages(imageMap)
+      } catch (error) {
+        console.error("Error fetching artist images:", error)
+      }
+    }
+
+    loadArtistImages()
+  }, [chartTracks])
+
+  const fetchSpotifyData = async () => {
     try {
-      const response = await fetch("/api/spotify/featured")
-      if (response.ok) {
-        const data = await response.json()
-        setFeaturedData(data)
+      const [featuredRes, chartsRes] = await Promise.all([fetch("/api/spotify/featured"), fetch("/api/spotify/charts")])
+
+      if (featuredRes.ok) {
+        const featuredData = await featuredRes.json()
+        setNewReleases(featuredData?.newReleases?.items || [])
+      }
+
+      if (chartsRes.ok) {
+        const chartsData = await chartsRes.json()
+        setChartTracks(chartsData?.tracks || [])
       }
     } catch (error) {
-      console.error("Error fetching featured data:", error)
+      console.error("Error fetching Spotify data:", error)
     }
   }
 
-  const fetchChartData = async () => {
+  const fetchCommunityReviews = async () => {
     try {
-      const response = await fetch("/api/spotify/charts")
-      if (response.ok) {
-        const data = await response.json()
-        setChartTracks(data.tracks || [])
+      const { data, error } = await supabase
+        .from("reviews")
+        .select(`
+          id,
+          content,
+          created_at,
+          song_id,
+          user_id,
+          profiles:user_id (username, avatar_url),
+          songs:song_id (id, name, album_name, artist_name, album_image_url)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(18)
+
+      if (error) throw error
+
+      if (data) {
+        const formatted: RealReview[] = await Promise.all(
+          data.map(async (review: any) => {
+            let ratingValue = 0
+            try {
+              const { data: routeRating } = await supabase
+                .from("ratings")
+                .select("rating")
+                .eq("user_id", review.user_id)
+                .eq("song_id", review.song_id)
+                .maybeSingle()
+              if (routeRating) ratingValue = routeRating.rating
+            } catch {
+              ratingValue = 0
+            }
+
+            return {
+              id: review.id,
+              content: review.content,
+              created_at: review.created_at,
+              song_id: review.song_id,
+              profiles: Array.isArray(review.profiles) ? review.profiles[0] : review.profiles,
+              songs: Array.isArray(review.songs) ? review.songs[0] : review.songs,
+              ratings: { rating: ratingValue },
+            }
+          })
+        )
+        setRealReviews(formatted)
       }
     } catch (error) {
-      console.error("Error fetching chart data:", error)
-    } finally {
-      setLoading(false)
+      console.error("Error fetching community reviews:", error)
     }
   }
 
-  const formatDuration = (ms: number) => {
-    const minutes = Math.floor(ms / 60000)
-    const seconds = Math.floor((ms % 60000) / 1000)
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`
+  const trendingArtists = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; image: string; mentions: number }>()
+    chartTracks.slice(0, 50).forEach((item) => {
+      const artist = item.track.artists[0]
+      if (!artist) return
+      const artistId = artist.id || artist.name
+      const prev = map.get(artistId)
+      map.set(artistId, {
+        id: artistId,
+        name: artist.name,
+        image: artist.id ? artistImages[artist.id] || "/placeholder.svg?height=320&width=320" : "/placeholder.svg?height=320&width=320",
+        mentions: (prev?.mentions || 0) + 1,
+      })
+    })
+
+    return Array.from(map.values())
+      .sort((a, b) => b.mentions - a.mentions)
+      .slice(0, 12)
+  }, [chartTracks, artistImages])
+
+  const mostReviewedTracks = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; artist: string; image: string; count: number; avg: number; total: number }>()
+
+    realReviews.forEach((review) => {
+      const song = review.songs
+      if (!song?.name) return
+      const key = review.song_id || `${song.name}-${song.artist_name}`
+      const entry = map.get(key)
+      const rating = review.ratings?.rating || 0
+
+      if (!entry) {
+        map.set(key, {
+          id: song.id || key,
+          name: song.name,
+          artist: song.artist_name,
+          image: song.album_image_url || "/placeholder.svg?height=320&width=320",
+          count: 1,
+          avg: rating,
+          total: rating,
+        })
+      } else {
+        const total = entry.total + rating
+        const count = entry.count + 1
+        map.set(key, { ...entry, count, total, avg: total / count })
+      }
+    })
+
+    return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 12)
+  }, [realReviews])
+
+  const getReviewMeta = (review: RealReview) => {
+    const songId = review.song_id || review.songs?.id || ""
+    const isAlbum = songId.startsWith("album:")
+    return {
+      isAlbum,
+      badge: isAlbum ? "Album" : "Song",
+      link: isAlbum ? `/album/${songId.replace(/^album:/, "")}` : `/song/${songId}`,
+      cover: review.songs?.album_image_url || "/placeholder.svg?height=120&width=120",
+      title: review.songs?.name || "Unknown",
+      subtitle: review.songs?.artist_name || "Unknown artist",
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-48 sm:h-64 lg:h-80 bg-gray-800 rounded-3xl" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-32 sm:h-48 bg-gray-800 rounded-3xl" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const heroImage =
+    chartTracks[0]?.track.album.images[0]?.url ||
+    newReleases[0]?.images[0]?.url ||
+    "/placeholder.svg?height=700&width=1200"
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-red-900/20 to-black" />
-        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-          <div className="text-center space-y-6 sm:space-y-8">
-            <div className="flex items-center justify-center gap-3 mb-6 sm:mb-8">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-600 rounded-2xl flex items-center justify-center">
-                <Music className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+    <div className="min-h-screen bg-[#040507] text-white pb-20">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_0%,rgba(76,180,255,0.18),transparent_35%),radial-gradient(circle_at_90%_20%,rgba(255,99,132,0.18),transparent_35%),linear-gradient(180deg,#040507_0%,#080c14_50%,#06070a_100%)]" />
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-12">
+        <section className="grid lg:grid-cols-[1.3fr_1fr] gap-6 items-stretch">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative min-h-[360px] rounded-[2rem] overflow-hidden border border-white/15 bg-white/5"
+          >
+            <Image
+              src={heroImage}
+              alt={newReleases[0]?.name || "Featured"}
+              fill
+              className="object-cover scale-105 blur-xl"
+            />
+            <div className="absolute inset-0 bg-gradient-to-tr from-black/85 via-black/30 to-transparent" />
+            <div className="absolute inset-0 p-7 md:p-10 flex flex-col justify-end">
+              <Badge className="w-fit mb-4 bg-white/15 text-white border border-white/20">Review Spotlight</Badge>
+              <h1 className="text-3xl md:text-5xl font-semibold tracking-tight max-w-xl">
+                Beatshelf is your Letterboxd for music discovery.
+              </h1>
+              <p className="text-white/70 mt-3 max-w-lg">Rate tracks, write rich reviews, and discover what real listeners think.</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button className="rounded-2xl bg-red-500 hover:bg-red-400 text-white" asChild>
+                  <Link href="/write-review">Write a Review</Link>
+                </Button>
+                <Button variant="outline" className="rounded-2xl border-white/30 bg-black/25 hover:bg-white/10" asChild>
+                  <Link href="/explore">Explore Music</Link>
+                </Button>
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white">BeatShelf</h1>
             </div>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed px-4">
-              Discover, rate, and review the world's music. Join the community.
-            </p>
+          </motion.div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4 px-4">
-              <Button
-                size="lg"
-                className="bg-red-600 hover:bg-red-700 text-white rounded-2xl px-6 sm:px-8 py-3 text-base sm:text-lg"
-              >
-                <Link href="/trending" className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Explore Music
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent rounded-2xl px-6 sm:px-8 py-3 text-base sm:text-lg"
-              >
-                <Link href="/search">Search Songs</Link>
-              </Button>
-            </div>
-
-            {/* Creator Credit - Enhanced Design */}
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600/20 to-pink-600/20 rounded-full border border-red-600/30">
-                <Heart className="w-4 h-4 text-red-400" />
-                <span className="text-sm bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent font-medium">
-                  Crafted by Akshit Suthar
-                </span>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12">
-        {/* Featured New Releases */}
-        {featuredData?.newReleases?.items && featuredData.newReleases.items.length > 0 && (
-          <section className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-xl sm:text-2xl font-bold text-white">New Releases</h2>
-              <Button
-                variant="ghost"
-                className="text-gray-400 hover:text-white rounded-xl self-start sm:self-auto"
-                asChild
-              >
-                <Link href="/trending">See All</Link>
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-              {featuredData.newReleases.items.slice(0, 12).map((album) => (
-                <Card
-                  key={album.id}
-                  className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
-                >
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="relative aspect-square mb-2 sm:mb-3 rounded-xl sm:rounded-2xl overflow-hidden">
-                      <Image
-                        src={album.images[0]?.url || "/placeholder.svg?height=200&width=200"}
-                        alt={album.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                      <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="icon" className="w-6 h-6 sm:w-8 sm:h-8 bg-red-600 hover:bg-red-700 rounded-full">
-                          <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />
-                        </Button>
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] backdrop-blur-xl p-6 space-y-4">
+            <h3 className="text-xl font-semibold">Recent Reviews Feed</h3>
+            <p className="text-sm text-white/60">Fresh opinions from the community right now.</p>
+            <div className="space-y-3">
+              {realReviews.slice(0, 4).map((review) => {
+                const meta = getReviewMeta(review)
+                return (
+                <Link key={review.id} href={meta.link} className="block rounded-2xl border border-white/10 bg-black/35 p-3 hover:bg-black/55 transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {review.profiles?.avatar_url ? (
+                      <Image src={review.profiles.avatar_url} alt="avatar" width={36} height={36} className="rounded-full object-cover" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+                        <UserRound className="w-4 h-4 text-white/70" />
                       </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">{review.profiles?.username || "Anonymous"}</p>
+                      <p className="text-xs text-white/55 truncate">{meta.title}</p>
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="font-medium text-xs sm:text-sm text-white line-clamp-1">{album.name}</h3>
-                      <p className="text-xs text-gray-400 line-clamp-1">
-                        {album.artists.map((a) => a.name).join(", ")}
-                      </p>
-                      <p className="text-xs text-gray-500">{new Date(album.release_date).getFullYear()}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Top Charts */}
-        {chartTracks.length > 0 && (
-          <section className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
-                Top Charts
-              </h2>
-              <Button
-                variant="ghost"
-                className="text-gray-400 hover:text-white rounded-xl self-start sm:self-auto"
-                asChild
-              >
-                <Link href="/trending">View All</Link>
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Top 10 List */}
-              <Card className="bg-gray-900/50 border-gray-800 rounded-2xl sm:rounded-3xl backdrop-blur-sm">
-                <CardContent className="p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-white mb-4">Global Top 10</h3>
-                  <div className="space-y-2 sm:space-y-3">
-                    {chartTracks.slice(0, 10).map((item, index) => (
-                      <Link
-                        key={item.track.id}
-                        href={`/song/${item.track.id}`}
-                        className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-gray-800/50 transition-colors group"
-                      >
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
-                          <span className="text-xs sm:text-lg font-bold text-gray-400 group-hover:text-red-600">
-                            {index + 1}
-                          </span>
-                        </div>
-                        <Image
-                          src={item.track.album.images[0]?.url || "/placeholder.svg?height=40&width=40"}
-                          alt={item.track.name}
-                          width={24}
-                          height={24}
-                          className="w-6 h-6 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-medium text-white truncate">
-                            {item.track.name.length > 20 ? item.track.name.substring(0, 20) + "..." : item.track.name}
-                          </p>
-                          <p className="text-xs text-gray-400 truncate">
-                            {item.track.artists.map((a) => a.name).join(", ").length > 15 ? 
-                             item.track.artists.map((a) => a.name).join(", ").substring(0, 15) + "..." : 
-                             item.track.artists.map((a) => a.name).join(", ")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                          <StarRating rating={4.2 + Math.random() * 0.8} readonly size="sm" />
-                          <span className="text-xs text-gray-500 hidden sm:inline">
-                            {formatDuration(item.track.duration_ms)}
-                          </span>
-                        </div>
-                      </Link>
-                    ))}
+                    <Badge className="rounded-full bg-white/10 border border-white/20 text-white/90">
+                      {meta.isAlbum ? <Disc3 className="w-3 h-3 mr-1" /> : <Mic2 className="w-3 h-3 mr-1" />}
+                      {meta.badge}
+                    </Badge>
+                    <StarRating rating={review.ratings?.rating || 0} readonly size="sm" />
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Featured Albums Grid */}
-              <div className="space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-white">Trending Albums</h3>
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  {chartTracks.slice(0, 4).map((item) => (
-                    <Card
-                      key={item.track.album.name + item.track.artists[0].name}
-                      className="bg-gray-900/50 border-gray-800 hover:bg-gray-800/50 transition-all duration-300 group rounded-2xl sm:rounded-3xl backdrop-blur-sm"
-                    >
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="relative aspect-square mb-2 sm:mb-3 rounded-xl sm:rounded-2xl overflow-hidden">
-                          <Image
-                            src={item.track.album.images[0]?.url || "/placeholder.svg?height=150&width=150"}
-                            alt={item.track.album.name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                          <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              size="icon"
-                              className="w-6 h-6 sm:w-8 sm:h-8 bg-red-600 hover:bg-red-700 rounded-full"
-                            >
-                              <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <h4 className="font-medium text-xs sm:text-sm text-white line-clamp-1">
-                            {item.track.album.name.length > 15 ? item.track.album.name.substring(0, 15) + "..." : item.track.album.name}
-                          </h4>
-                          <p className="text-xs text-gray-400 line-clamp-1">
-                            {item.track.artists.map((a) => a.name).join(", ").length > 12 ? 
-                             item.track.artists.map((a) => a.name).join(", ").substring(0, 12) + "..." : 
-                             item.track.artists.map((a) => a.name).join(", ")}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <StarRating rating={4.0 + Math.random() * 1} readonly size="sm" />
-                            <Badge variant="secondary" className="bg-red-600/20 text-red-400 text-xs rounded-full px-1">
-                              Hot
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+                </Link>
+              )})}
             </div>
-          </section>
-        )}
-
-        {/* Stats Section */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { title: "Songs", value: "50M+", icon: Music, desc: "In our database" },
-            { title: "Users", value: "2.1M+", icon: Users, desc: "Active monthly" },
-            { title: "Reviews", value: "15M+", icon: Star, desc: "Community reviews" },
-            { title: "Hours", value: "500K+", icon: Clock, desc: "Music streamed" },
-          ].map((stat) => (
-            <Card
-              key={stat.title}
-              className="bg-gray-900/50 border-gray-800 rounded-2xl sm:rounded-3xl backdrop-blur-sm"
-            >
-              <CardContent className="p-3 sm:p-4 text-center">
-                <stat.icon className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 mx-auto mb-2" />
-                <div className="text-lg sm:text-2xl font-bold text-white">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-gray-400">{stat.title}</div>
-                <div className="text-xs text-gray-500">{stat.desc}</div>
-              </CardContent>
-            </Card>
-          ))}
+          </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="text-center py-8 sm:py-12">
-          <div className="space-y-4 sm:space-y-6">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white">Start Your Musical Journey</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto px-4">
-              Join millions of music lovers discovering, rating, and sharing their favorite tracks.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-              <Button
-                size="lg"
-                className="bg-red-600 hover:bg-red-700 text-white rounded-2xl px-6 sm:px-8 py-3"
-                asChild
-              >
-                <Link href="/auth/signup">Sign Up Free</Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent rounded-2xl px-6 sm:px-8 py-3"
-                asChild
-              >
-                <Link href="/search">Explore Music</Link>
-              </Button>
+        <ScrollSection title="Trending Songs" subtitle="Most discussed songs this week" href="/trending">
+          {(loading ? Array.from({ length: 6 }) : chartTracks.slice(0, 12)).map((item, index) => {
+            if (loading) return <SkeletonCard key={`song-skeleton-${index}`} />
+            const track = (item as { track: SpotifyTrack }).track
+            return (
+              <motion.article key={track.id} whileHover={{ y: -6 }} className="group min-w-[280px] md:min-w-[320px] snap-start">
+                <Link href={`/song/${track.id}`} className="block relative h-[360px] rounded-3xl overflow-hidden border border-white/10">
+                  <Image src={track.album.images[0]?.url || "/placeholder.svg?height=500&width=500"} alt={track.name} fill className="object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-black/25 backdrop-blur-[2px] transition-opacity" />
+                  <div className="absolute bottom-0 p-5 w-full">
+                    <p className="text-xs uppercase tracking-[0.18em] text-white/65">Trending Song</p>
+                    <h3 className="text-2xl font-semibold line-clamp-1 mt-1">{track.name}</h3>
+                    <p className="text-sm text-white/70 line-clamp-1">{track.artists.map((a) => a.name).join(", ")}</p>
+                    <div className="mt-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" className="rounded-xl bg-white text-black hover:bg-white/90">Rate</Button>
+                      <Button size="sm" variant="outline" className="rounded-xl border-white/30 bg-black/30 hover:bg-white/15">Review</Button>
+                    </div>
+                  </div>
+                </Link>
+              </motion.article>
+            )
+          })}
+        </ScrollSection>
+
+        <ScrollSection title="Trending Artists" subtitle="Artists driving conversation and ratings" href="/trending">
+          {trendingArtists.map((artist) => (
+            <article key={artist.id} className="min-w-[220px] md:min-w-[240px] snap-start rounded-3xl border border-white/10 bg-white/[0.05] p-3 group hover:bg-white/[0.08] transition-colors">
+              <div className="relative aspect-square rounded-2xl overflow-hidden">
+                <Image src={artist.image} alt={artist.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+              </div>
+              <h3 className="font-semibold text-lg mt-3 line-clamp-1">{artist.name}</h3>
+              <p className="text-sm text-white/60">{artist.mentions} chart mentions</p>
+              <Button className="mt-3 w-full rounded-xl bg-transparent border border-white/25 hover:bg-white/10">Open Discussions</Button>
+            </article>
+          ))}
+        </ScrollSection>
+
+        <ScrollSection title="Top Rated Albums" subtitle="Community favorites from current releases" href="/albums">
+          {(loading ? Array.from({ length: 6 }) : newReleases.slice(0, 12)).map((album, index) => {
+            if (loading) return <SkeletonCard key={`album-skeleton-${index}`} />
+            return (
+              <article key={(album as NewReleaseAlbum).id} className="min-w-[250px] md:min-w-[280px] snap-start rounded-3xl border border-white/10 bg-white/[0.05] overflow-hidden group">
+                <Link href={`/album/${(album as NewReleaseAlbum).id}`}>
+                  <div className="relative aspect-[4/5]">
+                    <Image src={(album as NewReleaseAlbum).images[0]?.url || "/placeholder.svg?height=600&width=480"} alt={(album as NewReleaseAlbum).name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="font-semibold text-xl line-clamp-1">{(album as NewReleaseAlbum).name}</h3>
+                      <p className="text-sm text-white/70 line-clamp-1">{(album as NewReleaseAlbum).artists.map((a) => a.name).join(", ")}</p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-sm text-white/50 italic">Not yet rated</span>
+                        <span className="text-xs text-white/60">{new Date((album as NewReleaseAlbum).release_date).getFullYear()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </article>
+            )
+          })}
+        </ScrollSection>
+
+        <ScrollSection title="Most Reviewed Tracks" subtitle="Songs with the most review activity" href="/reviews">
+          {mostReviewedTracks.map((track) => (
+            <article key={track.id} className="min-w-[300px] snap-start rounded-3xl border border-white/10 bg-white/[0.05] p-4 overflow-hidden">
+              <div className="flex items-center gap-4">
+                <Image src={track.image} alt={track.name} width={84} height={84} className="rounded-2xl object-cover" />
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-lg line-clamp-1">{track.name}</h3>
+                  <p className="text-sm text-white/65 line-clamp-1">{track.artist}</p>
+                  <p className="text-xs text-white/55 mt-1">{track.count} reviews</p>
+                  <div className="mt-2"><StarRating rating={track.avg} readonly size="sm" /></div>
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Button size="sm" className="rounded-xl bg-white text-black hover:bg-white/90" asChild>
+                  <Link href="/reviews">Read Reviews</Link>
+                </Button>
+                <Button size="sm" variant="outline" className="rounded-xl border-white/25 bg-transparent hover:bg-white/10" asChild>
+                  <Link href={`/song/${track.id}`}>Write Review</Link>
+                </Button>
+              </div>
+            </article>
+          ))}
+        </ScrollSection>
+
+        <section className="space-y-4">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">Recent Reviews Feed</h2>
+              <p className="text-white/55 text-sm mt-1">Social-first review stream with opinions that matter.</p>
             </div>
+            <Link href="/reviews" className="text-sm text-white/70 hover:text-white inline-flex items-center">
+              Open feed <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {realReviews.slice(0, 6).map((review) => {
+              const meta = getReviewMeta(review)
+              return (
+              <article key={review.id} className="rounded-3xl border border-white/10 bg-white/[0.05] backdrop-blur-xl p-5 hover:bg-white/[0.08] transition-colors overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {review.profiles?.avatar_url ? (
+                      <Image src={review.profiles.avatar_url} alt="avatar" width={30} height={30} className="rounded-full object-cover" />
+                    ) : (
+                      <div className="w-[30px] h-[30px] rounded-full bg-white/10 flex items-center justify-center">
+                        <UserRound className="w-3.5 h-3.5 text-white/70" />
+                      </div>
+                    )}
+                    <p className="font-medium truncate">{review.profiles?.username || "Anonymous"}</p>
+                  </div>
+                  <Badge className="rounded-full bg-white/10 border border-white/20 text-white/90">
+                    {meta.isAlbum ? <Disc3 className="w-3 h-3 mr-1" /> : <Mic2 className="w-3 h-3 mr-1" />}
+                    {meta.badge}
+                  </Badge>
+                  <StarRating rating={review.ratings?.rating || 0} readonly size="sm" />
+                </div>
+                <p className="text-sm text-white/60 mt-1">on {meta.title}</p>
+                <div 
+                  className="text-sm text-white/80 mt-4 line-clamp-4 prose prose-invert prose-sm max-w-none prose-p:text-white/80 prose-strong:text-white prose-em:text-white/75 prose-blockquote:text-white/70 prose-li:text-white/80"
+                  dangerouslySetInnerHTML={{ __html: renderReviewContent(review.content) }}
+                />
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm" variant="outline" className="rounded-xl border-white/25 bg-transparent hover:bg-white/10" asChild>
+                    <Link href={meta.link}><MessageCircle className="w-4 h-4 mr-2" />Discuss</Link>
+                  </Button>
+                </div>
+              </article>
+            )})}
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#111a2f]/80 via-[#0f1524]/80 to-[#1d121b]/80 backdrop-blur-xl p-8 md:p-10 text-center">
+          <p className="text-white/60 uppercase tracking-[0.2em] text-xs">Community-Driven Discovery</p>
+          <h3 className="text-3xl md:text-4xl font-semibold mt-3">No playback-first UI. Just better music opinions.</h3>
+          <p className="text-white/70 max-w-2xl mx-auto mt-3">
+            Beatshelf helps people discover their next favorite artist through ratings, thoughtful reviews, and active discussion.
+          </p>
+          <div className="mt-6 flex justify-center gap-3 flex-wrap">
+            <Button className="rounded-2xl bg-red-500 hover:bg-red-400" asChild>
+              <Link href="/write-review">Start Reviewing</Link>
+            </Button>
+            <Button variant="outline" className="rounded-2xl border-white/30 bg-transparent hover:bg-white/10" asChild>
+              <Link href="/trending"><TrendingUp className="w-4 h-4 mr-2" />View Leaderboards</Link>
+            </Button>
           </div>
         </section>
       </div>
-
-      {/* Footer with Creator Credit */}
-      <footer className="border-t border-gray-800 bg-gray-900/30 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center">
-                <Music className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-lg sm:text-xl font-bold text-white">BeatShelf</span>
-            </div>
-
-            <div className="text-center space-y-2">
-              <p className="text-sm text-gray-400">© 2024 BeatShelf. All rights reserved.</p>
-              <div className="flex items-center justify-center gap-2 text-sm">
-                <span className="text-gray-500">Crafted with</span>
-                <span className="text-red-500">♥</span>
-                <span className="text-gray-500">by</span>
-                <span className="font-semibold bg-gradient-to-r from-red-400 to-purple-400 bg-clip-text text-transparent">
-                  Akshit Suthar
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-gray-400">
-              <Link href="/about" className="hover:text-white transition-colors">
-                About
-              </Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Terms
-              </Link>
-              <Link href="/contact" className="hover:text-white transition-colors">
-                Contact
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

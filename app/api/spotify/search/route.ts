@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { searchTracks } from "@/lib/spotify"
+import { searchMusic } from "@/lib/spotify"
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Query parameter is required" }, { status: 400 })
     }
 
-    const results = await searchTracks(query, limit, offset)
+    const results = await searchMusic(query, limit, offset)
     return NextResponse.json(results)
   } catch (error) {
     console.error("Search error:", error)
-    return NextResponse.json({ error: "Failed to search tracks" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to search music" }, { status: 500 })
   }
 }

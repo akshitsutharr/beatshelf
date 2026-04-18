@@ -95,11 +95,15 @@ export function SongCard({ song, showRating = true, className }: SongCardProps) 
               </p>
             </div>
 
-            {showRating && song.avg_rating !== undefined && (
-              <div className="flex items-center justify-between">
-                <StarRating rating={song.avg_rating} readonly size="sm" />
-                {song.total_ratings && song.total_ratings > 0 && (
-                  <span className="text-xs text-muted-foreground hidden sm:inline">({song.total_ratings})</span>
+            {showRating && (
+              <div className="flex items-center justify-between mt-1">
+                {song.total_ratings && song.total_ratings > 0 && song.avg_rating !== undefined ? (
+                  <>
+                    <StarRating rating={song.avg_rating} readonly size="sm" />
+                    <span className="text-xs text-muted-foreground hidden sm:inline">({song.total_ratings})</span>
+                  </>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">Not yet rated</span>
                 )}
               </div>
             )}

@@ -1,6 +1,7 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Navbar } from "@/components/navbar"
@@ -16,11 +17,6 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://beatshelf.vercel.app'),
   verification: {
     google: 'jY4malBVzB7Jldw1_KK9HIf9uUeLn84HMic_0PvABec', 
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
   },
   icons: {
     icon: '/icon1.png',
@@ -56,6 +52,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
+
 
 export default function RootLayout({
   children,
@@ -65,13 +67,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>
-          <div className="min-h-screen bg-black">
-            <Navbar />
-            <main className="relative">{children}</main>
-            <Toaster />
-          </div>
-        </AuthProvider>
+        <ClerkProvider>
+          <AuthProvider>
+            <div className="min-h-screen bg-black">
+              <Navbar />
+              <main className="relative">{children}</main>
+              <Toaster />
+            </div>
+          </AuthProvider>
+        </ClerkProvider>
       </body>
     </html>
   )

@@ -3,24 +3,41 @@ import { getSpotifyToken } from "@/lib/spotify"
 
 export async function GET() {
   try {
-    const token = await getSpotifyToken()
+    let token;
+    try {
+      token = await getSpotifyToken()
+    } catch (e) {
+      console.error("Failed to authenticate with Spotify API:", e);
+      return NextResponse.json({
+        featured: { items: [] },
+        newReleases: { items: [] },
+        topTracks: [],
+        error: "Spotify Auth Failed"
+      })
+    }
 
-    // Use Promise.allSettled for better error handling
+    // Use Promise.allSettled for better error handling across endpoints
     const [featuredResult, newReleasesResult, topTracksResult] = await Promise.allSettled([
-      // Featured playlists
       fetch("https://api.spotify.com/v1/browse/featured-playlists?limit=6", {
         headers: { Authorization: `Bearer ${token}` },
-      }).then((res) => (res.ok ? res.json() : null)),
+      }).then(async (res) => {
+        if (!res.ok) throw new Error("Featured playlists failed");
+        return res.json();
+      }),
 
-      // New releases
       fetch("https://api.spotify.com/v1/browse/new-releases?limit=50", {
         headers: { Authorization: `Bearer ${token}` },
-      }).then((res) => (res.ok ? res.json() : null)),
+      }).then(async (res) => {
+        if (!res.ok) throw new Error("New releases failed");
+        return res.json();
+      }),
 
-      // Top tracks from Global Top 50 playlist
       fetch("https://api.spotify.com/v1/playlists/37i9dQZEVXbMDoHDwVN2tF/tracks?limit=20", {
         headers: { Authorization: `Bearer ${token}` },
-      }).then((res) => (res.ok ? res.json() : null)),
+      }).then(async (res) => {
+        if (!res.ok) throw new Error("Top tracks failed");
+        return res.json();
+      }),
     ])
 
     const results = {
@@ -29,28 +46,25 @@ export async function GET() {
       topTracks: [],
     }
 
-    // Process featured playlists
     if (featuredResult.status === "fulfilled" && featuredResult.value) {
       results.featured = featuredResult.value.playlists || { items: [] }
     }
 
-    // Process new releases
     if (newReleasesResult.status === "fulfilled" && newReleasesResult.value) {
       results.newReleases = newReleasesResult.value.albums || { items: [] }
     }
 
-    // Process top tracks
     if (topTracksResult.status === "fulfilled" && topTracksResult.value) {
       results.topTracks = topTracksResult.value.items || []
     }
 
-    // If no new releases, try alternative search
-    if (results.newReleases.items.length === 0) {
+    // Alternative fallback if newReleases is fundamentally empty (Spotify region restrictions etc)
+    if (results.newReleases.items?.length === 0) {
       try {
         const currentYear = new Date().getFullYear()
         const searchResponse = await fetch(
           `https://api.spotify.com/v1/search?q=year:${currentYear}&type=album&limit=50`,
-          { headers: { Authorization: `Bearer ${token}` } },
+          { headers: { Authorization: `Bearer ${token}` } }
         )
 
         if (searchResponse.ok) {
@@ -65,12 +79,11 @@ export async function GET() {
     return NextResponse.json(results)
   } catch (error) {
     console.error("Featured API error:", error)
-
-    // Return empty but valid structure
     return NextResponse.json({
       featured: { items: [] },
       newReleases: { items: [] },
       topTracks: [],
+      error: "Internal Error"
     })
   }
 }

@@ -46,7 +46,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push("/auth/signin")
+      router.push("/sign-in")
       return
     }
     loadUserData()
