@@ -207,28 +207,26 @@ export default function TrendingPage() {
                     <Link
                       href={`/song/${song.id}`}
                       key={song.id}
-                      className="grid grid-cols-[48px_56px_1fr_auto] md:grid-cols-[58px_70px_1fr_auto] items-center gap-3 rounded-2xl p-2.5 border border-transparent hover:border-white/15 hover:bg-white/[0.04] transition-colors"
+                      className="flex items-center gap-3 md:gap-4 rounded-2xl p-2.5 border border-transparent hover:border-white/15 hover:bg-white/[0.04] transition-colors"
                     >
-                      <div className="text-center">
+                      <div className="w-10 md:w-12 text-center shrink-0">
                         <p className="font-semibold text-lg text-white/80">{index + 1}</p>
-                        <p className="text-[10px] uppercase text-white/40 tracking-wide">{song.trend}</p>
+                        <p className="text-[10px] uppercase text-white/40 tracking-wide mt-0.5">{song.trend}</p>
                       </div>
-                      <Image src={song.image} alt={song.name} width={70} height={70} className="rounded-xl object-cover" />
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{song.name}</p>
-                        <p className="text-sm text-white/60 truncate">{song.artist}</p>
-                        <p className="text-xs text-white/45 mt-1">{song.reviews > 0 ? `${song.reviews} active reviews` : "No reviews yet"}</p>
+                      <Image src={song.image} alt={song.name} width={56} height={56} className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-[15px] md:text-base leading-tight truncate">{song.name}</p>
+                        <p className="text-[13px] md:text-sm text-white/60 truncate mt-1">{song.artist}</p>
+                        <p className="text-[11px] md:text-xs text-white/45 mt-1 hidden sm:block">{song.reviews > 0 ? `${song.reviews} active reviews` : "No reviews yet"}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0 flex flex-col items-end justify-center">
                         {song.score > 0 ? (
                           <>
-                            <p className="text-sm text-yellow-300 inline-flex items-center justify-end gap-1"><Star className="w-4 h-4" /> {song.score.toFixed(1)}</p>
-                            <p className="text-xs text-white/45">review score</p>
+                            <p className="text-[13px] md:text-sm text-yellow-300 flex items-center gap-1"><Star className="w-3.5 h-3.5" /> {song.score.toFixed(1)}</p>
+                            <p className="text-[10px] md:text-xs text-white/45 mt-0.5 hidden xs:block">rev. score</p>
                           </>
                         ) : (
-                          <div className="flex items-center h-full">
-                            <span className="text-[11px] text-white/40 italic">Not yet rated</span>
-                          </div>
+                          <span className="text-[10px] md:text-[11px] text-white/40 italic">Not yet rated</span>
                         )}
                       </div>
                     </Link>

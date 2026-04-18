@@ -24,8 +24,8 @@ export default function SignUpPage() {
               formButtonPrimary: "bg-red-500 hover:bg-red-400 text-white rounded-xl",
               formFieldInput: "bg-black/40 border border-white/15 text-white rounded-xl",
               formFieldLabel: "text-white/70",
-              footerActionText: "text-white/60",
-              footerActionLink: "text-sky-300 hover:text-sky-200",
+              footerActionText: "text-black font-medium",
+              footerActionLink: "text-red-500 hover:text-red-600 font-semibold",
             },
           }}
         />

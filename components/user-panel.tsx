@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { User, BarChart3, Heart, Settings, MessageCircle, ChevronRight, Music, TrendingUp, Search } from "lucide-react"
+import { User, BarChart3, Heart, Settings, MessageCircle, ChevronRight, Music, TrendingUp, Search, LogOut } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
@@ -19,8 +19,9 @@ interface UserPanelProps {
 }
 
 export function UserPanel({ isVisible, onMouseEnter, onMouseLeave }: UserPanelProps) {
-  const { user, profile } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
   const [stats, setStats] = useState({ reviews: 0, favorites: 0, ratings: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -215,7 +216,17 @@ export function UserPanel({ isVisible, onMouseEnter, onMouseLeave }: UserPanelPr
               </div>
 
               {/* Footer */}
-              <div className="pt-4 border-t border-gray-700/50">
+              <div className="pt-4 border-t border-gray-700/50 space-y-3">
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl"
+                  onClick={async () => {
+                    await signOut()
+                    router.push("/")
+                  }}
+                >
+                  <LogOut className="w-4 h-4 mr-2" /> Sign out
+                </Button>
                 <div className="text-center">
                   <p className="text-xs text-gray-500">
                     Welcome back, <span className="text-red-400 font-medium">{profile.username}</span>!

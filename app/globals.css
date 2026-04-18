@@ -124,3 +124,21 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* Hide Clerk branding and Development Mode badge on forms */
+.cl-footer div:has(> a[href*="clerk"]) {
+  display: none !important;
+}
+
+[class*="cl-internal-"] > a[href*="clerk.dev"],
+[class*="cl-internal-"] > svg {
+  display: none !important;
+}
+
+div.cl-internal-b3al4t, 
+div.cl-internal-1dauvpw, 
+div.cl-internal-1x7x339,
+.cl-devMode {
+  display: none !important;
+}
+

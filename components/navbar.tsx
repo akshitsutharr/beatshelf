@@ -272,8 +272,8 @@ export function Navbar() {
             <Link href="/explore" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
               <Compass className="h-4 w-4" /> Explore
             </Link>
-            <Link href="/artists" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
-              <Users className="h-4 w-4" /> Artists
+            <Link href="/dashboard" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
+              <User className="h-4 w-4" /> Profile
             </Link>
             <Link href="/albums" className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-white/8">
               <Disc3 className="h-4 w-4" /> Albums
