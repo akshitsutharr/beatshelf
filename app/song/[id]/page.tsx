@@ -712,27 +712,46 @@ export default function SongDetailPage() {
 
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Card className="bg-white/[0.05] border-white/10 rounded-2xl">
-            <CardContent className="p-4">
-              <p className="text-xs text-white/55 uppercase tracking-[0.14em]">Average Rating</p>
-              <p className="text-2xl font-semibold mt-1">{song.avg_rating?.toFixed(1) || "0.0"}</p>
+            <CardContent className="p-4 text-white">
+              <p className="text-xs uppercase tracking-[0.14em] opacity-55">
+                Average Rating
+              </p>
+              <p className="text-2xl font-semibold mt-1">
+                {song.avg_rating?.toFixed(1) || "0.0"}
+              </p>
             </CardContent>
           </Card>
+
           <Card className="bg-white/[0.05] border-white/10 rounded-2xl">
-            <CardContent className="p-4">
-              <p className="text-xs text-white/55 uppercase tracking-[0.14em]">Ratings</p>
-              <p className="text-2xl font-semibold mt-1">{song.total_ratings || 0}</p>
+            <CardContent className="p-4 text-white">
+              <p className="text-xs uppercase tracking-[0.14em] opacity-55">
+                Ratings
+              </p>
+              <p className="text-2xl font-semibold mt-1">
+                {song.total_ratings || 0}
+              </p>
             </CardContent>
           </Card>
+
           <Card className="bg-white/[0.05] border-white/10 rounded-2xl">
-            <CardContent className="p-4">
-              <p className="text-xs text-white/55 uppercase tracking-[0.14em]">Reviews</p>
-              <p className="text-2xl font-semibold mt-1">{song.total_reviews || 0}</p>
+            <CardContent className="p-4 text-white">
+              <p className="text-xs uppercase tracking-[0.14em] opacity-55">
+                Reviews
+              </p>
+              <p className="text-2xl font-semibold mt-1">
+                {song.total_reviews || 0}
+              </p>
             </CardContent>
           </Card>
+
           <Card className="bg-white/[0.05] border-white/10 rounded-2xl">
-            <CardContent className="p-4">
-              <p className="text-xs text-white/55 uppercase tracking-[0.14em]">Favorites</p>
-              <p className="text-2xl font-semibold mt-1">{song.total_favorites || 0}</p>
+            <CardContent className="p-4 text-white">
+              <p className="text-xs uppercase tracking-[0.14em] opacity-55">
+                Favorites
+              </p>
+              <p className="text-2xl font-semibold mt-1">
+                {song.total_favorites || 0}
+              </p>
             </CardContent>
           </Card>
         </section>
