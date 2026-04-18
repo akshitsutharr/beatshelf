@@ -24,15 +24,6 @@ const nextConfig = {
     ],
   },
 
-  async redirects() {
-    return [
-      {
-        source: "/:path*",
-        destination: "https://beatshelf.netlify.app/:path*",
-        permanent: true,
-      },
-    ];
-  },
 };
 
 export default nextConfig;
