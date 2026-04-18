@@ -236,6 +236,7 @@ function CardPreview({
   font,
   size,
   showRatingBadge,
+  previewMaxWidth = 460,
 }: {
   cardRef: React.RefObject<HTMLDivElement>
   reviewData: ReviewData
@@ -244,6 +245,7 @@ function CardPreview({
   font: (typeof FONTS)[FontKey]
   size: (typeof SIZES)[SizeKey]
   showRatingBadge: boolean
+  previewMaxWidth?: number
 }) {
   const t = theme
   const safeRating = Math.max(1, Math.min(5, Math.round(reviewData.rating || 3)))
@@ -254,7 +256,7 @@ function CardPreview({
   const isSide = layout === "side"
   const isCinematic = layout === "cinematic"
 
-  const scale = Math.min(1, 460 / size.w)
+  const scale = Math.min(1, previewMaxWidth / size.w)
   const imgSize = isSide ? 180 : isCentered ? 220 : isEditorial ? 200 : 240
 
   return (
@@ -263,6 +265,8 @@ function CardPreview({
         transform: `scale(${scale})`,
         transformOrigin: "top center",
         marginBottom: `${(size.h * scale) - size.h}px`,
+        marginLeft: `${((size.w * scale) - size.w) / 2}px`,
+        marginRight: `${((size.w * scale) - size.w) / 2}px`,
       }}
     >
       <div
@@ -583,11 +587,21 @@ export function ReviewCardGenerator({ reviewData, isOpen, onClose }: ReviewCardG
   const [showRatingBadge, setShowRatingBadge] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200)
   const cardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t) }
   }, [toast])
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
+  const isMobile = windowWidth <= 768
+  const previewMaxWidth = isMobile ? windowWidth - 40 : 460
 
   const theme = THEMES[themeKey]
   const font = FONTS[fontKey]
@@ -630,12 +644,36 @@ export function ReviewCardGenerator({ reviewData, isOpen, onClose }: ReviewCardG
 
   if (!isOpen) return null
 
+  const renderPreviewNode = () => (
+    <div style={{
+      flex: isMobile ? "none" : 1, padding: isMobile ? "24px 16px" : 32, overflowY: "auto",
+      display: "flex", flexDirection: "column", alignItems: "center",
+      background: "repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,0.012) 10px,rgba(255,255,255,0.012) 20px)",
+      borderBottom: isMobile ? "1px solid rgba(255,255,255,0.06)" : "none",
+      minHeight: isMobile ? "40vh" : undefined,
+    }}>
+      <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 20 }}>
+        Preview — {size.label}
+      </div>
+      <CardPreview
+        cardRef={cardRef}
+        reviewData={reviewData}
+        theme={theme}
+        layout={layout}
+        font={font}
+        size={size}
+        showRatingBadge={showRatingBadge}
+        previewMaxWidth={previewMaxWidth}
+      />
+    </div>
+  )
+
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9999,
       background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)",
       display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 16, overflowY: "auto",
+      padding: isMobile ? 0 : 16, overflowY: "auto",
     }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
@@ -653,18 +691,19 @@ export function ReviewCardGenerator({ reviewData, isOpen, onClose }: ReviewCardG
       <div style={{
         width: "100%", maxWidth: 1100,
         background: "#0a0a0a",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 24,
+        border: isMobile ? "none" : "1px solid rgba(255,255,255,0.08)",
+        borderRadius: isMobile ? 0 : 24,
         overflow: "hidden",
         boxShadow: "0 40px 100px rgba(0,0,0,0.8)",
         display: "flex", flexDirection: "column",
-        maxHeight: "calc(100vh - 32px)",
+        maxHeight: isMobile ? "100vh" : "calc(100vh - 32px)",
+        height: isMobile ? "100vh" : "auto",
         fontFamily: "'Satoshi','DM Sans',sans-serif",
       }}>
 
         {/* Header */}
         <div style={{
-          padding: "20px 28px",
+          padding: isMobile ? "16px 20px" : "20px 28px",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
           background: "rgba(255,255,255,0.02)",
@@ -690,16 +729,19 @@ export function ReviewCardGenerator({ reviewData, isOpen, onClose }: ReviewCardG
         </div>
 
         {/* Body */}
-        <div style={{ display: "flex", overflow: "auto", flex: 1, minHeight: 0 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "hidden", flex: 1, minHeight: 0 }}>
+
+          {isMobile && renderPreviewNode()}
 
           {/* Controls Sidebar */}
           <div style={{
-            width: 280, flexShrink: 0,
-            borderRight: "1px solid rgba(255,255,255,0.06)",
-            padding: "24px 20px",
+            width: isMobile ? "100%" : 280, flexShrink: 0,
+            borderRight: isMobile ? "none" : "1px solid rgba(255,255,255,0.06)",
+            padding: isMobile ? "24px 16px" : "24px 20px",
             overflowY: "auto",
-            display: "flex", flexDirection: "column", gap: 28,
+            display: "flex", flexDirection: "column", gap: isMobile ? 24 : 28,
             background: "#050505",
+            flex: isMobile ? 1 : undefined,
           }}>
 
             {/* Theme */}
@@ -835,25 +877,7 @@ export function ReviewCardGenerator({ reviewData, isOpen, onClose }: ReviewCardG
             </div>
           </div>
 
-          {/* Preview Area */}
-          <div style={{
-            flex: 1, padding: 32, overflowY: "auto",
-            display: "flex", flexDirection: "column", alignItems: "center",
-            background: "repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,0.012) 10px,rgba(255,255,255,0.012) 20px)",
-          }}>
-            <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 20 }}>
-              Preview — {size.label}
-            </div>
-            <CardPreview
-              cardRef={cardRef}
-              reviewData={reviewData}
-              theme={theme}
-              layout={layout}
-              font={font}
-              size={size}
-              showRatingBadge={showRatingBadge}
-            />
-          </div>
+          {!isMobile && renderPreviewNode()}
         </div>
       </div>
 
