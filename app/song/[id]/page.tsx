@@ -239,7 +239,7 @@ export default function SongDetailPage() {
             return {
               ...review,
               profiles: Array.isArray(review.profiles) ? review.profiles[0] : review.profiles,
-              rating: ratingData?.rating || 0,
+              ratings: ratingData ? { rating: ratingData.rating } : undefined,
               likes_count: likesCount || 0,
               user_liked: userLiked,
             } as Review
