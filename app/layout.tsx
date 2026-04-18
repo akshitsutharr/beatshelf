@@ -66,12 +66,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-[#050608] text-white`}>
         <ClerkProvider>
           <AuthProvider>
-            <div className="min-h-screen bg-black">
+            <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-black">
               <Navbar />
-              <main className="relative">{children}</main>
+              <main className="flex-1 relative">{children}</main>
               <Toaster />
             </div>
           </AuthProvider>
