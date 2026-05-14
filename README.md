@@ -219,20 +219,6 @@ From `package.json`:
 
 ---
 
-## 🖼️ Screenshots / Preview
-
-Add screenshots here to make the README even more “crazy modern”:
-
-```md
-![Home](./public/screenshots/home.png)
-![Track Page](./public/screenshots/track.png)
-![Review Composer](./public/screenshots/review.png)
-```
-
-> Tip: Create `public/screenshots/` and drop images in.
-
----
-
 ## 🌍 Deployment
 
 ### Vercel (Recommended)
